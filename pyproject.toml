@@ -1,0 +1,14 @@
+[project]
+name = "colorimeter"
+version = "0.1.0"
+description = "Analysis of smartphone-based color measurement and correction."
+readme = "README.md"
+require-python=">=3.12"
+dependencies = [
+    "ipykernel>=7.1.0",
+    "numpy>=2.4.0",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.16.3",
+    "seaborn>=0.13.2",
+]

@@ -32,4 +32,10 @@ Our app addresses the fundamental challenge of mobile color measurement by imple
 ## 📥 Getting Started
 Download our application and run it on your Android device! 
 
-*For more details on installation and usage, please refer to our documentation.*
+<!-- *For more details on installation and usage, please refer to our documentation.* -->
+
+## Reproduction of Analysis
+
+If you have [uv](https://docs.astral.sh/uv/) installed, run `uv sync` from the command line to create (or update) a virtual environment with all the dependencies.
+Alternatively, use `requirements.txt`.
+Follow the Jupyter notebook TODO to reproduce our models and results.
