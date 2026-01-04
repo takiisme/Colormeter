@@ -4,6 +4,7 @@ from skimage.color import lab2rgb
 from matplotlib.colors import hsv_to_rgb
 import numpy as np
 
+# TODO: Allow for conversion from any source (rgb, hsv, lab) to any target (rgb, hsv, lab).
 def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
     """
     Convert RGB columns in a DataFrame to HSV or Lab color space.
@@ -28,7 +29,7 @@ def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
         df[f"{prefix}V"] = hsv_values[:, 2]
     elif to == "lab":
         lab_values = rgb2lab(rgb_values)
-        df[f"{prefix}l"] = lab_values[:, 0]
+        df[f"{prefix}L"] = lab_values[:, 0]
         df[f"{prefix}a"] = lab_values[:, 1]
         df[f"{prefix}b"] = lab_values[:, 2]
     else:
