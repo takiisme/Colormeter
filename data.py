@@ -120,15 +120,13 @@ def load_data(path: Path | str, verbose=False):
 
     return df
 
-
+# TODO: Do we need this in the final version?
 def displayDataFrameInfo(df):
     print("\n--- DataFrame Head (First 5 Rows) ---")
     print(df.head())
 
     print("\n--- DataFrame Information ---")
     print(df.info())
-
-    # ### 3.1 Check Sensor Variability
 
     # This checks the pitch/roll stability across all 240 measurements.
     print("\n--- Sensor Angle Statistics ---")
@@ -137,7 +135,13 @@ def displayDataFrameInfo(df):
 
 # TODO: Remove this before submission.
 if __name__ == "__main__":
-    path = "Data/Baisu1.json"
-    df = load_data(Path(path), verbose=False)
-    print(df.head())
-    print(df.info())
+    df_daylight1 = load_data("Data/Jonas1.json")
+    df_daylight1["lighting_condition"] = "daylight"
+    df_daylight2 = load_data("Data/Baisu1.json")
+    df_daylight2["lighting_condition"] = "daylight"
+    df_dark1 = load_data("Data/Tai4.json")
+    df_dark1["lighting_condition"] = "dark"
+    df_dark2 = load_data("Data/Zhi3.json")
+    df_dark2["lighting_condition"] = "dark"
+
+    df = pd.concat([df_daylight1, df_daylight2, df_dark1, df_dark2], ignore_index=True)
