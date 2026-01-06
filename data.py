@@ -121,6 +121,20 @@ def load_data(path: Path | str, verbose=False):
     return df
 
 
+def displayDataFrameInfo(df):
+    print("\n--- DataFrame Head (First 5 Rows) ---")
+    print(df.head())
+
+    print("\n--- DataFrame Information ---")
+    print(df.info())
+
+    # ### 3.1 Check Sensor Variability
+
+    # This checks the pitch/roll stability across all 240 measurements.
+    print("\n--- Sensor Angle Statistics ---")
+    print(df[['pitch', 'roll']].describe())
+
+
 # TODO: Remove this before submission.
 if __name__ == "__main__":
     path = "Data/Baisu1.json"
