@@ -29,7 +29,7 @@ def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
         df[f"{prefix}V"] = hsv_values[:, 2]
     elif to == "lab":
         lab_values = rgb2lab(rgb_values)
-        df[f"{prefix}L"] = lab_values[:, 0]
+        df[f"{prefix}l"] = lab_values[:, 0]
         df[f"{prefix}a"] = lab_values[:, 1]
         df[f"{prefix}b"] = lab_values[:, 2]
     else:
