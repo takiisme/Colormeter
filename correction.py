@@ -124,7 +124,7 @@ class CorrectionByModel:
             reg_degree: float = 0.,
             reg_pose: float = 0.,
             boundary_penalty_factor: float = 1000,
-            r: int = 4.
+            r: int = 4
         ):
         self.space = space
         self.method = method
@@ -155,9 +155,9 @@ class CorrectionByModel:
         If pose == True:
             Append pitch and roll at the end.
         """
-        m0 = self.m0
-        m1 = self.m1
-        m2 = self.m2
+        m0 = self.m0  # first channel measurements (R or L)
+        m1 = self.m1  # second channel measurements (G or a)
+        m2 = self.m2  # third channel measurements (B or b)
         N = len(m0)
 
         # pose terms
@@ -171,23 +171,24 @@ class CorrectionByModel:
         if self.method == 'joint':
             terms = []
 
-            # degree 0
+            # Degree 0
             terms.append(np.ones((N, 1)))
 
-            # degree 1 to degree D
+            # Degree 1 to degree D
             for d in range(1, self.degree + 1):
                 for i, j, k in itertools.product(range(d + 1), repeat=3):
                     if i + j + k == d:
                         term = (m0 ** i) * (m1 ** j) * (m2 ** k)
                         terms.append(term.reshape(N, 1))
 
-            # append pose at the end
+            # Append pose at the end
             if self.pose:
                 terms.extend(pose_terms)
 
             return np.hstack(terms)
 
         if self.method == 'individual':
+            # Build one design matrix for each channel
             X_list = []
     
             for m in [m0, m1, m2]:
@@ -235,6 +236,7 @@ class CorrectionByModel:
             mse1 = mean_squared_error(self.gt1, c1)
             mse2 = mean_squared_error(self.gt2, c2)
             mse_loss = (mse0 + mse1 + mse2) / 3
+            print(mse_loss)
             # Boundary penalty for all 3 channels
             if self.space == ColorSpace.RGB:
                 boundary_penalty = (
@@ -350,8 +352,10 @@ class CorrectionByModel:
                     options={'maxiter': 1000, 'ftol': 1e-8}
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
+            
+        print(X)
 
         return self.coeffs
     
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
-        
+        pass
