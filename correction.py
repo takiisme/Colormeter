@@ -242,7 +242,7 @@ class CorrectionByModel:
             mse1 = mean_squared_error(self.gt1, c1)
             mse2 = mean_squared_error(self.gt2, c2)
             mse_loss = (mse0 + mse1 + mse2) / 3
-            print(mse_loss)
+            # print(mse_loss)
             # Boundary penalty for all 3 channels
             if self.space == ColorSpace.RGB:
                 boundary_penalty = (
@@ -256,6 +256,8 @@ class CorrectionByModel:
                     np.mean((c1 < -128) | (c1 > 127)) +
                     np.mean((c2 < -128) | (c2 > 127))
                 ) * self.boundary_penalty_factor
+            # print(boundary_penalty)
+            boundary_penalty = 0
             # Compute regularization penalty
             reg_penalty = 0
             idx = 1  # skip constant term
@@ -327,7 +329,7 @@ class CorrectionByModel:
         
         if self.method == 'joint':
             X = self.build_design_matrix()
-            x0 = np.zeros((3, X.shape[1])).flatten()
+            x0 = np.ones((3, X.shape[1])).flatten()
             # Create a partial function to compute loss
             loss_function = partial(
                 self.calculate_loss
