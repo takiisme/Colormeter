@@ -8,16 +8,15 @@ import color_conversion
 from constants import ColorSpace
 
 
-def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
-    def add_averge(df_with_gt_columns: pd.DataFrame) -> pd.DataFrame:
+def plot_comparison_grid(df_final_comparison, radius=4, rows=4, cols=6):
+    def add_average(df_with_gt_columns: pd.DataFrame, radius: int) -> pd.DataFrame:
+        """Calculate average values for the specified radius"""
+        # Dynamically create column names based on radius
         avg_cols_to_compute = [
-            'color_r0_R', 'color_r0_G', 'color_r0_B',
-            'correction_r0_R', 'correction_r0_G', 'correction_r0_B',
-            'color_r2_R', 'color_r2_G', 'color_r2_B',
-            'correction_r2_R', 'correction_r2_G', 'correction_r2_B',
-            'color_r4_R', 'color_r4_G', 'color_r4_B',
-            'correction_r4_R', 'correction_r4_G', 'correction_r4_B'
+            f'color_r{radius}_R', f'color_r{radius}_G', f'color_r{radius}_B',
+            f'correction_r{radius}_R', f'correction_r{radius}_G', f'correction_r{radius}_B'
         ]
+        
         df_avg = df_with_gt_columns.groupby('sample_number')[avg_cols_to_compute].mean().reset_index()
 
         # Rename columns to 'avg_...' to clearly distinguish them
@@ -29,13 +28,12 @@ def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
 
         return df_final_comparison
 
-    df_plot = add_averge(df_final_comparison)
+    df_plot = add_average(df_final_comparison, radius)
     
     # Unique samples only
     df_plot = df_plot.drop_duplicates(subset=['sample_number']).reset_index(drop=True)
 
     # 1. Pre-calculate Hex columns using vectorized utility
-    # Using the exact prefixes from your naming convention
     gt_prefix = "gt__"
     uncorr_prefix = f"avg_color_r{radius}_"
     corr_prefix = f"avg_correction_r{radius}_"
@@ -79,7 +77,6 @@ def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
         def text_col(rgb): return 'black' if np.mean(rgb) > 0.5 else 'white'
 
         # 4. Add Labels using pre-calculated hex
-        # Positioned in the center of each respective quadrant
         ax.text(50, 75, gt_hex, color=text_col(gt_rgb), ha='center', fontsize=7, 
                 bbox=dict(facecolor='white', alpha=0.3, edgecolor='none'))
         ax.text(25, 25, uncorr_hex, color=text_col(uncorr_rgb), ha='center', fontsize=7, 
