@@ -206,6 +206,7 @@ def plotHSVError(df: pd.DataFrame, option: str = 'V') -> tuple[plt.Figure, plt.A
     fig.tight_layout(rect=[0, 0, 0.95, 1])
     return fig, axes
 
+
 # This plot supersedes `plot_error_dist`
 def plot_against_gt(
         df: pd.DataFrame,
