@@ -2,6 +2,8 @@ import json
 import pandas as pd
 from pathlib import Path
 
+from constants import ColorSpace
+
 
 def load_data(path: Path | str, verbose=False):
     """
@@ -131,6 +133,17 @@ def displayDataFrameInfo(df):
     # This checks the pitch/roll stability across all 240 measurements.
     print("\n--- Sensor Angle Statistics ---")
     print(df[['pitch', 'roll']].describe())
+
+
+def assert_cols_exist(df: pd.DataFrame, r: int, space: ColorSpace, correction: bool = False, gt: bool = False):
+    channels = space.get_channels()
+    required_cols = [f'color_r{r}_{ch}' for ch in channels]
+    if correction:
+        required_cols += [f'correction_r{r}_{ch}' for ch in channels]
+    if gt:
+        required_cols += [f'gt__{ch}' for ch in channels]
+    for col in required_cols:
+        assert col in df.columns, f"DataFrame missing required column: {col}"
 
 
 # TODO: Remove this before submission.

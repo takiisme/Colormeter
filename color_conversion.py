@@ -3,6 +3,7 @@ from skimage.color import rgb2lab
 from skimage.color import lab2rgb
 from matplotlib.colors import hsv_to_rgb
 import numpy as np
+from constants import ColorSpace
 
 # TODO: Allow for conversion from any source (rgb, hsv, lab) to any target (rgb, hsv, lab).
 def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
@@ -21,13 +22,13 @@ def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
     if any(rgb_values.flatten() > 1):
         rgb_values = rgb_values / 255.0
 
-    if to == "hsv":
+    if to == ColorSpace.HSV:
         # rgb_to_hsv requires normalized rgb as input and gives normalized hsv as output
         hsv_values = rgb_to_hsv(rgb_values)
         df[f"{prefix}H"] = hsv_values[:, 0]
         df[f"{prefix}S"] = hsv_values[:, 1]
         df[f"{prefix}V"] = hsv_values[:, 2]
-    elif to == "lab":
+    elif to == ColorSpace.LAB:
         lab_values = rgb2lab(rgb_values)
         df[f"{prefix}l"] = lab_values[:, 0]
         df[f"{prefix}a"] = lab_values[:, 1]
