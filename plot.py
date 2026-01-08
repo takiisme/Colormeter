@@ -2,13 +2,32 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from color_conversion import convert_rgb_cols
+from constants import ColorSpace
 
-import data
-import color_conversion
 
+def plot_comparison_grid(
+        df: pd.DataFrame,
+        r: int,
+        rows: int = 4, cols: int = 6
+    ) -> tuple[plt.Figure, plt.Axes]:
+    """
+    Plots measured, correction, and ground truth colors, averaged over the sample, as small color patches.
 
-################################################################
-def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing measurement, correction, and ground truth columns.
+    r : int
+        Reticle size (0, 2, or 4).
+    rows : int
+        Number of rows in the grid.
+        `rows` x `cols` = 24 is recommended.
+    cols : int
+        Number of columns in the grid.
+    """
+
+    # Helper function to add average color columns
     def add_averge(df_with_gt_columns: pd.DataFrame) -> pd.DataFrame:
         avg_cols_to_compute = [
             'color_r0_R', 'color_r0_G', 'color_r0_B',
@@ -25,11 +44,11 @@ def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
         df_avg = df_avg.rename(columns=new_avg_columns_map)
 
         # Merge the df (which now has ground truth) with the averaged color data
-        df_final_comparison = pd.merge(df_with_gt_columns, df_avg, on='sample_number', how='left')
+        df = pd.merge(df_with_gt_columns, df_avg, on='sample_number', how='left')
 
-        return df_final_comparison
+        return df
 
-    df_plot = add_averge(df_final_comparison)
+    df_plot = add_averge(df)
     
     # Unique samples only
     df_plot = df_plot.drop_duplicates(subset=['sample_number']).reset_index(drop=True)
@@ -37,16 +56,16 @@ def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
     # 1. Pre-calculate Hex columns using vectorized utility
     # Using the exact prefixes from your naming convention
     gt_prefix = "gt__"
-    uncorr_prefix = f"avg_color_r{radius}_"
-    corr_prefix = f"avg_correction_r{radius}_"
+    uncorr_prefix = f"avg_color_r{r}_"
+    corr_prefix = f"avg_correction_r{r}_"
 
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=gt_prefix, to="hex")
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=uncorr_prefix, to="hex")
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=corr_prefix, to="hex")
+    df_plot = convert_rgb_cols(df_plot, prefix=gt_prefix, to=ColorSpace.HEX)
+    df_plot = convert_rgb_cols(df_plot, prefix=uncorr_prefix, to=ColorSpace.HEX)
+    df_plot = convert_rgb_cols(df_plot, prefix=corr_prefix, to=ColorSpace.HEX)
 
     num_samples = len(df_plot)
     if num_samples == 0:
-        print(f"No data for r{radius}")
+        print(f"No data for r{r}")
         return
 
     # Change this line:
@@ -94,19 +113,18 @@ def plot_comparison_grid(df_final_comparison, radius, rows=4, cols=6):
     for j in range(num_samples, len(axes)): fig.delaxes(axes[j])
 
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.suptitle(f'Radius R{radius} Comparison: Ground Truth (Bottom) vs Uncorrected (L) vs Corrected (R)', fontsize=16)
-    if radius == 0: plt.savefig('Correction_comparison_R0.png')
-    plt.show()
+    plt.suptitle(f'Comparison: Ground Truth (Bottom) vs Uncorrected (L) vs Corrected (R), r={r}', fontsize=16)
+    return fig, axes
 
 
-def HSV_error(df):
+def HSV_error(df: pd.DataFrame) -> pd.DataFrame:
     """
     Vectorized HSV error analysis.
     Uses convert_rgb_cols and handles dynamic correction prefixes.
     """
     # 1. Process Ground Truth (gt__)
-    df = color_conversion.convert_rgb_cols(df, prefix="gt__", to="hsv")
-    df = color_conversion.convert_rgb_cols(df, prefix="gt__", to="hex")
+    df = convert_rgb_cols(df, prefix="gt__", to="hsv")
+    df = convert_rgb_cols(df, prefix="gt__", to="hex")
     
     # 2. Process Corrected Colors: auto-detect prefix
     possible_prefixes = ['correction_r4_', 'correction_r2_', 'correction_r0_']
@@ -116,7 +134,7 @@ def HSV_error(df):
         raise KeyError("No correction RGB columns found. Ensure corrections are applied first.")
 
     # Convert corrected RGB to HSV
-    df = color_conversion.convert_rgb_cols(df, prefix=corr_prefix, to="hsv")
+    df = convert_rgb_cols(df, prefix=corr_prefix, to="hsv")
 
     # 3. Calculate Errors and Run Correlations
     channels = ['H', 'S', 'V']
@@ -141,9 +159,16 @@ def HSV_error(df):
     return df
 
 
-def plotHSVError(df, option='V'):
+def plotHSVError(df: pd.DataFrame, option: str = 'V') -> tuple[plt.Figure, plt.Axes]:
     """
     Visualizes error vs angles with a fresh figure for each call.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing error and angle columns.
+    option : str
+        Color channel option ('H', 'S', or 'V').
     """
     plt.close('all') # Clear previous figures to prevent memory/render issues
     fig, axes = plt.subplots(1, 2, figsize=(20, 6))
@@ -177,5 +202,5 @@ def plotHSVError(df, option='V'):
     if axes[0].get_legend():
         axes[0].legend(title='Sample Label', bbox_to_anchor=(1.05, 1), loc='upper left')
 
-    plt.tight_layout(rect=[0, 0, 0.95, 1])
-    plt.show()
+    fig.tight_layout(rect=[0, 0, 0.95, 1])
+    return fig, axes

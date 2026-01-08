@@ -4,6 +4,7 @@ class ColorSpace(Enum):
     RGB = 'rgb'
     LAB = 'lab'
     HSV = 'hsv'
+    HEX = 'hex'
 
     def get_channels(self) -> list[str]:
         if self == ColorSpace.RGB:

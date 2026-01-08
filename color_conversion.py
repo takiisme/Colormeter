@@ -34,7 +34,7 @@ def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace 
         df[f"{prefix}l"] = lab_values[:, 0]
         df[f"{prefix}a"] = lab_values[:, 1]
         df[f"{prefix}b"] = lab_values[:, 2]
-    elif to == "hex":
+    elif to == ColorSpace.HEX:
         # Hex needs 0-255 integers. 
         # If we normalized to 0-1 earlier, scale back up.
         if any(rgb_values.flatten() <= 1.0): hex_rgb = (rgb_values * 255).astype(int)
