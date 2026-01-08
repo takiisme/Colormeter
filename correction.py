@@ -280,9 +280,9 @@ class CorrectionByModel:
             # Boundary penalty for specific channel
             if self.space == ColorSpace.RGB:
                 boundary_penalty = (np.mean((c < 0) | (c > 255))) * self.boundary_penalty_factor
-            elif self.space == ColorSpace.lab and channel == 0:
+            elif self.space == ColorSpace.LAB and channel == 0:
                 boundary_penalty = (np.mean((c < 0) | (c > 100))) * self.boundary_penalty_factor
-            elif self.space == ColorSpace.lab and channel in [1, 2]:
+            elif self.space == ColorSpace.LAB and channel in [1, 2]:
                 boundary_penalty = (np.mean((c < -128) | (c > 127))) * self.boundary_penalty_factor
             # Compute regularization penalty
             reg_penalty = 0
