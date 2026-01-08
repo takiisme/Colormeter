@@ -34,6 +34,14 @@ def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace 
         df[f"{prefix}l"] = lab_values[:, 0]
         df[f"{prefix}a"] = lab_values[:, 1]
         df[f"{prefix}b"] = lab_values[:, 2]
+    elif to == "hex":
+        # Hex needs 0-255 integers. 
+        # If we normalized to 0-1 earlier, scale back up.
+        if any(rgb_values.flatten() <= 1.0): hex_rgb = (rgb_values * 255).astype(int)
+        else: hex_rgb = rgb_values.astype(int)
+
+        # Vectorized hex conversion
+        df[f"{prefix}hex"] = ['#{:02x}{:02x}{:02x}'.format(r, g, b) for r, g, b in hex_rgb]
     else:
         raise ValueError("Unsupported color space. Use 'hsv' or 'lab'.")
 
@@ -80,3 +88,4 @@ def convert_to_rgb(df, prefix="color_r4_", from_space="hsv"):
     df[f"{prefix}B"] = rgb[:, 2]
 
     return df
+
