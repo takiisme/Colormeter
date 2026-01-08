@@ -135,6 +135,12 @@ class CorrectionByModel:
         self.boundary_penalty_factor = boundary_penalty_factor
         self.r = r
         self.coeffs = []
+        self.m0 = None
+        self.m1 = None
+        self.m2 = None
+        self.gt0 = None
+        self.gt1 = None
+        self.gt2 = None
     
     def build_design_matrix(self):
         """
@@ -330,7 +336,7 @@ class CorrectionByModel:
                 method='L-BFGS-B',
                 options={'maxiter': 1000, 'ftol': 1e-8}
             )
-            self.coeffs = optimal_joint_coeffs.x
+            self.coeffs = optimal_joint_coeffs.x.reshape(-1, 3)
         elif self.method == 'individual':
             self.coeffs = [None, None, None]
             X_list = self.build_design_matrix()
@@ -350,8 +356,48 @@ class CorrectionByModel:
                     options={'maxiter': 1000, 'ftol': 1e-8}
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
+        print("train finished, coeffs shape:", self.coeffs.shape)
+        print("coeffs:", self.coeffs[:5])
 
         return self.coeffs
     
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:
-        
+        print("coeffs:", self.coeffs)
+        # Convert to Lab if needed
+        if self.space == ColorSpace.LAB:
+            convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
+            convert_rgb_cols(df, prefix=f'color_r{self.r}_', to=ColorSpace.LAB)
+            self.m0 = df[f'color_r{self.r}_l'].values
+            self.m1 = df[f'color_r{self.r}_a'].values
+            self.m2 = df[f'color_r{self.r}_b'].values
+            self.gt0 = df['gt__l'].values
+            self.gt1 = df['gt__a'].values
+            self.gt2 = df['gt__b'].values
+        else:
+            self.m0 = df[f'color_r{self.r}_R'].values
+            self.m1 = df[f'color_r{self.r}_G'].values
+            self.m2 = df[f'color_r{self.r}_B'].values
+            self.gt0 = df['gt__R'].values
+            self.gt1 = df['gt__G'].values
+            self.gt2 = df['gt__B'].values
+        self.pitch = df['pitch'].values
+        self.roll = df['roll'].values
+        # Compute unclipped corrected values
+        if self.method == 'joint':
+            X = self.build_design_matrix()
+            c0, c1, c2 = self.compute_corrected_values(self.coeffs, X)
+        elif self.method == 'individual':
+            X_list = self.build_design_matrix()
+            c0 = self.compute_corrected_values(self.coeffs, X_list, channel=0)
+            c1 = self.compute_corrected_values(self.coeffs, X_list, channel=1)
+            c2 = self.compute_corrected_values(self.coeffs, X_list, channel=2)
+        # Clip to valid range and add to DataFrame
+        if self.space == ColorSpace.RGB:
+            df[f'correction_r{self.r}_R'] = np.clip(c0, 0, 255).astype(int)
+            df[f'correction_r{self.r}_G'] = np.clip(c1, 0, 255).astype(int)
+            df[f'correction_r{self.r}_B'] = np.clip(c2, 0, 255).astype(int)
+        elif self.space == ColorSpace.LAB:
+            df[f'correction_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
+            df[f'correction_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
+            df[f'correction_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+        return df
