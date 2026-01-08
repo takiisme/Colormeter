@@ -3,14 +3,7 @@
   - methods:
     - train(df, *hyperparms)
     - test(df)
-  - CorrectionByScaling
-    - methods:
-      - train -- call test
-      - test:
-        params:
-        - df: measured and ref RGB
-        - space: 'rgb' or 'lab'
-      - ...
+  - ~~CorrectionByScaling~~ DONE
   - CorrectionByModel
     (Following the sklearn design, set hyperparameters at init)
     - attributes:
