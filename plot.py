@@ -123,8 +123,8 @@ def HSV_error(df: pd.DataFrame) -> pd.DataFrame:
     Uses convert_rgb_cols and handles dynamic correction prefixes.
     """
     # 1. Process Ground Truth (gt__)
-    df = convert_rgb_cols(df, prefix="gt__", to="hsv")
-    df = convert_rgb_cols(df, prefix="gt__", to="hex")
+    df = convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HSV)
+    df = convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HEX)
     
     # 2. Process Corrected Colors: auto-detect prefix
     possible_prefixes = ['correction_r4_', 'correction_r2_', 'correction_r0_']
@@ -134,7 +134,7 @@ def HSV_error(df: pd.DataFrame) -> pd.DataFrame:
         raise KeyError("No correction RGB columns found. Ensure corrections are applied first.")
 
     # Convert corrected RGB to HSV
-    df = convert_rgb_cols(df, prefix=corr_prefix, to="hsv")
+    df = convert_rgb_cols(df, prefix=corr_prefix, to=ColorSpace.HSV)
 
     # 3. Calculate Errors and Run Correlations
     channels = ['H', 'S', 'V']
