@@ -3,10 +3,11 @@ from skimage.color import rgb2lab
 from skimage.color import lab2rgb
 from matplotlib.colors import hsv_to_rgb
 import numpy as np
+import pandas as pd
 from constants import ColorSpace
 
 # TODO: Allow for conversion from any source (rgb, hsv, lab) to any target (rgb, hsv, lab).
-def convert_rgb_cols(df, prefix="color_r4_", to="hsv"):
+def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace = ColorSpace.HSV):
     """
     Convert RGB columns in a DataFrame to HSV or Lab color space.
 
