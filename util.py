@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from pathlib import Path
+import numpy as np
 
 from constants import ColorSpace
 
@@ -159,3 +160,21 @@ def get_color_col_names(df: pd.DataFrame, r: int, space: ColorSpace, correction:
     for col in cols:
         assert col in df.columns, f"DataFrame missing required column: {col}"
     return cols
+
+
+# def get_euclidean_error(df: pd.DataFrame, r: int, space: ColorSpace, prefix: str = "color"):
+#     """
+#     Calculate Euclidean error between measured (or corrected) and ground-truth colors.
+#     """
+#     # Measured or corrected color columns
+#     color_cols = get_color_col_names(df, r, space, correction=correction, gt=False)
+#     # Ground-truth color columns
+#     gt_cols = get_color_col_names(df, r, space, correction=False, gt=True)
+
+#     # Calculate Euclidean distance per row
+#     error = np.sqrt(
+#         ((df[color_cols[0]] - df[gt_cols[0]]) ** 2) +
+#         ((df[color_cols[1]] - df[gt_cols[1]]) ** 2) +
+#         ((df[color_cols[2]] - df[gt_cols[2]]) ** 2)
+#     )
+#     return error

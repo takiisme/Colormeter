@@ -47,7 +47,7 @@ def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace 
 
     return df
 
-def convert_to_rgb(df, prefix="color_r4_", from_space="hsv"):
+def convert_to_rgb(df, prefix="color_r4_", from_space=ColorSpace.HSV):
     """
     Convert HSV or Lab columns back to RGB.
 
@@ -59,7 +59,7 @@ def convert_to_rgb(df, prefix="color_r4_", from_space="hsv"):
     - from_space: 'hsv' or 'lab'
     """
 
-    if from_space == "hsv":
+    if from_space == ColorSpace.HSV:
         cols = [f"{prefix}H", f"{prefix}S", f"{prefix}V"]
         hsv = df[cols].to_numpy(dtype=float)
 
@@ -69,7 +69,7 @@ def convert_to_rgb(df, prefix="color_r4_", from_space="hsv"):
         # hsv_to_rgb expects [0,1]
         rgb = hsv_to_rgb(hsv)
 
-    elif from_space == "lab":
+    elif from_space == ColorSpace.LAB:
         cols = [f"{prefix}l", f"{prefix}a", f"{prefix}b"]
         lab = df[cols].to_numpy(dtype=float)
 

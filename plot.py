@@ -367,26 +367,34 @@ def plot_against_gt(
 
     return g
 
-# ECDF plot helper functions
-def ecdf(x, alpha=0.05):
-    """Compute ECDF for a one-dimensional array of measurements."""
+def plot_ecdf(ax: plt.Axes, x: np.ndarray, alpha=0.05, **kwargs) -> plt.Axes:
+    """
+    Compute ECDF for a one-dimensional array of measurements.
+    
+    Parameters
+    ----------
+    ax : plt.Axes
+        Matplotlib Axes to plot on.
+    x : np.ndarray
+        One-dimensional array of measurements.
+    alpha : float
+        Significance level for confidence intervals.
+    **kwargs : dict
+        Additional keyword arguments for the step plot.
+    """
     n = len(x)
     x_sorted = np.sort(x)
     y = np.arange(1, n + 1) / n
-    # DKW confidence intervals
+    # DKW confidence band
     width = np.sqrt(np.log(2 / alpha) / (2 * n))
     lower = np.maximum(y - width, 0)
     upper = np.minimum(y + width, 1)
-    return x_sorted, y, lower, upper
-
-def plot_ecdf(eucl_raw, eucl_corrected, alpha=0.05, ax=None):
-    """Compute ECDF for a one-dimensional array of measurements."""
-    if ax is None:
-        ax = plt.gca()
-    x_sorted, y, lower, upper = ecdf(eucl_raw, alpha=alpha)
-    ax.step(x_sorted, y, label='raw', where='post', color='blue')
-    ax.fill_between(x_sorted, lower, upper, step='post', alpha=0.2, color='blue')
-    x_sorted, y, lower, upper = ecdf(eucl_corrected, alpha=alpha)
-    ax.step(x_sorted, y, label='corrected', where='post', color='red')
-    ax.fill_between(x_sorted, lower, upper, step='post', alpha=0.2, color='red')
+    # Plot ECDF
+    ax.step(x_sorted, y, where='post', **kwargs)
+    # Avoid duplicate label entries
+    kwargs.pop('label', None)
+    # Plot confidence band
+    ax.fill_between(x_sorted, lower, upper, step='post', alpha=0.3, linewidth=0, **kwargs)
+    # Plot mean line
+    # ax.axvline(np.mean(x), color=kwargs.get('color', 'black'), linestyle='dashed', linewidth=1)
     return ax
