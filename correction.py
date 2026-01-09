@@ -18,7 +18,7 @@ class CorrectionByScaling:
         self.r = r
         
     def train(self, df: pd.DataFrame) -> None:
-        # There is not training for scaling correction.
+        # There is no training for scaling correction.
         pass
     
     def predict(self, df: pd.DataFrame) -> pd.DataFrame:

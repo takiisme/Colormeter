@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import data
-import color_conversion
-from constants import ColorSpace
+from util import get_color_col_names
+from color_conversion import convert_rgb_cols
+from constants import ColorSpace, LightingCondition
 
 
 def plot_comparison_grid(df_final_comparison, radius=4, rows=4, cols=6):
@@ -38,9 +38,9 @@ def plot_comparison_grid(df_final_comparison, radius=4, rows=4, cols=6):
     uncorr_prefix = f"avg_color_r{radius}_"
     corr_prefix = f"avg_correction_r{radius}_"
 
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=gt_prefix, to=ColorSpace.HEX)
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=uncorr_prefix, to=ColorSpace.HEX)
-    df_plot = color_conversion.convert_rgb_cols(df_plot, prefix=corr_prefix, to=ColorSpace.HEX)
+    df_plot = convert_rgb_cols(df_plot, prefix=gt_prefix, to=ColorSpace.HEX)
+    df_plot = convert_rgb_cols(df_plot, prefix=uncorr_prefix, to=ColorSpace.HEX)
+    df_plot = convert_rgb_cols(df_plot, prefix=corr_prefix, to=ColorSpace.HEX)
 
     num_samples = len(df_plot)
     if num_samples == 0:
@@ -106,9 +106,9 @@ def plotHSV(df):
         uncorr_prefix = f"color_r{radius}_"
         corr_prefix = f"correction_r{radius}_"
 
-        df = color_conversion.convert_rgb_cols(df, prefix=gt_prefix, to=ColorSpace.HSV)
-        df = color_conversion.convert_rgb_cols(df, prefix=uncorr_prefix, to=ColorSpace.HSV)
-        df = color_conversion.convert_rgb_cols(df, prefix=corr_prefix, to=ColorSpace.HSV)
+        df = convert_rgb_cols(df, prefix=gt_prefix, to=ColorSpace.HSV)
+        df = convert_rgb_cols(df, prefix=uncorr_prefix, to=ColorSpace.HSV)
+        df = convert_rgb_cols(df, prefix=corr_prefix, to=ColorSpace.HSV)
 
         h_diff_uncorr = np.abs(df[f'{uncorr_prefix}H'] - df[f'{gt_prefix}H'])
         df['H_error_uncorr'] = np.minimum(h_diff_uncorr, 1 - h_diff_uncorr)
@@ -173,9 +173,9 @@ def plotHSVError(df):
     """
     plt.close('all')
 
-    df = color_conversion.convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HSV)
-    df = color_conversion.convert_rgb_cols(df, prefix="gt__", to=ColorSpace.LAB)
-    df = color_conversion.convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HEX)
+    df = convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HSV)
+    df = convert_rgb_cols(df, prefix="gt__", to=ColorSpace.LAB)
+    df = convert_rgb_cols(df, prefix="gt__", to=ColorSpace.HEX)
 
     # Detect corrected prefix
     possible_prefixes = ['correction_r4_', 'correction_r2_', 'correction_r0_']
@@ -184,7 +184,7 @@ def plotHSVError(df):
     if corr_prefix is None:
         raise KeyError("No correction RGB columns found.")
 
-    df = color_conversion.convert_rgb_cols(df, prefix=corr_prefix, to=ColorSpace.HSV)
+    df = convert_rgb_cols(df, prefix=corr_prefix, to=ColorSpace.HSV)
 
     # Compute errors
     channels = ['H', 'S', 'V']
@@ -238,3 +238,131 @@ def plotHSVError(df):
     fig.tight_layout(rect=[0, 0, 0.95, 0.95])
 
     return fig, axes
+
+
+# This plot supersedes `plot_error_dist`
+def plot_against_gt(
+        df: pd.DataFrame,
+        space: ColorSpace = ColorSpace.RGB,
+        lighting_condition: LightingCondition = LightingCondition.DAYLIGHT,
+        r: int = 4
+    ) -> sns.FacetGrid:
+    """
+    Plot raw and corrected measurements against ground truth.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame containing measurement, correction, and ground truth columns.
+    space : ColorSpace
+        Color space to plot (RGB, HSV, Lab).
+    lighting_condition : LightingCondition
+        Lighting condition to filter by (daylight or dark).
+    r : int
+        Reticle size (0, 2, or 4).
+
+    Returns: sns.FacetGrid
+        Seaborn FacetGrid object containing the plots.
+    """
+    try:
+        color_cols = get_color_col_names(df, r=r, space=space, correction=True, gt=True)
+    except AssertionError:
+        # If columns do not exist, add them
+        df = convert_rgb_cols(df, prefix=f'color_r{r}_', to=space)
+        df = convert_rgb_cols(df, prefix=f'correction_r{r}_', to=space)
+        df = convert_rgb_cols(df, prefix='gt__', to=space)
+        color_cols = get_color_col_names(df, r=r, space=space, correction=True, gt=True)
+    
+    # Store color labels
+    color_labels = df[['sample_number', 'label']].drop_duplicates().set_index('sample_number')
+
+    # Cast into long format for easier plotting
+    channels = space.get_channels()
+    df_long = pd.melt(
+        df,
+        id_vars=['lighting_condition', 'session_name', 'sample_number', 'capture_index'],
+        value_vars=color_cols,
+        var_name='variable',
+        value_name='value'
+    )
+    # Extract channel
+    df_long['channel'] = df_long['variable'].str[-1]
+    df_long['type'] = df_long['variable'].str.split('_').str[0]
+    df_long = df_long.drop(columns=['variable', 'capture_index'])
+    # Renaming for plot readability
+    df_long['type'] = df_long['type'].map({
+        'color': 'raw',
+        'correction': 'corrected',
+        'gt': 'true',
+    })
+    # Join back color labels
+    df_long = df_long.join(
+        color_labels,
+        on='sample_number',
+        how='left'
+    )
+
+    # Here starts the plotting part
+    df_plot = df_long.query("channel in @channels")
+    g = sns.FacetGrid(df_plot.query(f"lighting_condition == '{lighting_condition.value}' & type in ['raw', 'corrected']"), col="label", col_wrap=6)
+    # TODO: decide on which plot to use
+    # g.map_dataframe(
+    #     sns.violinplot,
+    #     x="channel",
+    #     y="value",
+    #     hue="type",
+    #     palette={
+    #         'raw': 'blue',
+    #         'corrected': 'red'
+    #     },
+    #     alpha=0.5,
+    #     split=True,
+    #     gap=0.1,
+    #     inner=None
+    # )
+    g.map_dataframe(
+        sns.stripplot,
+        x="channel",
+        y="value",
+        hue="type",
+        palette={
+            'raw': 'blue',
+            'corrected': 'red'
+        },
+        size=4,
+        alpha=0.3,
+        dodge=True,
+    )
+    # g.map_dataframe(
+    #     sns.boxplot,
+    #     x="channel",
+    #     y="value",
+    #     hue="type",
+    #     palette={
+    #         'raw': 'blue',
+    #         'corrected': 'red'
+    #     },
+    #     linewidth=1,
+    #     fliersize=4,
+    #     gap=0.1,
+    # )
+    # Add hlines for ground truth
+    gt_subset = df_plot.query("lighting_condition == 'daylight' & type == 'true'")
+    for ax, label in zip(g.axes.flat, g.col_names):
+        # break
+        gt_values = gt_subset.query(f"label == '{label}'").set_index('channel')['value'].to_dict()
+        for i, (ch, gt) in enumerate(gt_values.items()):
+            # # Speical case: H of red is ~1, but draw at ~0 -- equivalent, but looks better
+            # if label == 'Red' and ch == 'H':
+            #     gt = abs(1 - gt)
+            width = 0.5
+            ax.hlines(
+                y=gt,
+                xmin=i - width,
+                xmax=i + width,
+                colors='black',
+                linestyles='dashed',
+            )
+    g.add_legend()
+
+    return g

@@ -4,20 +4,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-import data
+import util
 import plot
 from correction import CorrectionByScaling
 from constants import ColorSpace
 
 # TODO: Remove this before submission.
 # if __name__ == "__main__":
-df_daylight1 = data.load_data("Data/Jonas1.json")
+df_daylight1 = util.load_data("Data/Jonas1.json")
 df_daylight1["lighting_condition"] = "daylight"
-df_daylight2 = data.load_data("Data/Baisu1.json")
+df_daylight2 = util.load_data("Data/Baisu1.json")
 df_daylight2["lighting_condition"] = "daylight"
-df_dark1 = data.load_data("Data/Tai4.json")
+df_dark1 = util.load_data("Data/Tai4.json")
 df_dark1["lighting_condition"] = "dark"
-df_dark2 = data.load_data("Data/Zhi3.json")
+df_dark2 = util.load_data("Data/Zhi3.json")
 df_dark2["lighting_condition"] = "dark"
 
 df = pd.concat([df_daylight1, df_daylight2, df_dark1, df_dark2], ignore_index=True)
