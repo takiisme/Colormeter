@@ -16,8 +16,8 @@ class CorrectionByScaling:
     def __init__(self, space: ColorSpace = ColorSpace.RGB, r: int = 4):
         self.space = space
         self.r = r
-    
-    def apply_correction(self, df: pd.DataFrame) -> pd.DataFrame:
+
+    def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
         """
         Apply scaling correction to the DataFrame measurements.
 
@@ -25,6 +25,8 @@ class CorrectionByScaling:
         ----------
         df : pd.DataFrame
             DataFrame containing measurement and reference columns.
+        prefix : str
+            Prefix for the correction columns.
 
         Returns: pd.DataFrame
             DataFrame with added correction columns.
@@ -33,7 +35,7 @@ class CorrectionByScaling:
         meas_cols = [f'color_r{self.r}_{ch}' for ch in channels]
         ref_cols = [f'white_r{self.r}_{ch}' for ch in channels]
         assert all(col in df.columns for col in meas_cols + ref_cols), "DataFrame missing required measurement or reference columns."
-        corr_cols = [f'correction_r{self.r}_{ch}' for ch in channels]
+        corr_cols = [f'{prefix}_r{self.r}_{ch}' for ch in channels]
         
         if self.space == ColorSpace.RGB:
             scale_fn = self._scale_rgb_row
@@ -357,7 +359,7 @@ class CorrectionByModel:
 
         return self.coeffs
     
-    def apply_correction(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
         print("coeffs:", self.coeffs)
         # Convert to Lab if needed
         if self.space == ColorSpace.LAB:
@@ -389,11 +391,11 @@ class CorrectionByModel:
             c2 = self.compute_corrected_values(self.coeffs, X_list, channel=2)
         # Clip to valid range and add to DataFrame
         if self.space == ColorSpace.RGB:
-            df[f'correction_r{self.r}_R'] = np.clip(c0, 0, 255).astype(int)
-            df[f'correction_r{self.r}_G'] = np.clip(c1, 0, 255).astype(int)
-            df[f'correction_r{self.r}_B'] = np.clip(c2, 0, 255).astype(int)
+            df[f'{prefix}_r{self.r}_R'] = np.clip(c0, 0, 255).astype(int)
+            df[f'{prefix}_r{self.r}_G'] = np.clip(c1, 0, 255).astype(int)
+            df[f'{prefix}_r{self.r}_B'] = np.clip(c2, 0, 255).astype(int)
         elif self.space == ColorSpace.LAB:
-            df[f'correction_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
-            df[f'correction_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
-            df[f'correction_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+            df[f'{prefix}_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
+            df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
+            df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
