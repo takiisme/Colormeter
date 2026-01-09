@@ -9,8 +9,6 @@ import plot
 from correction import CorrectionByScaling
 from constants import ColorSpace
 
-# TODO: Remove this before submission.
-# if __name__ == "__main__":
 df_daylight1 = util.load_data("Data/Jonas1.json")
 df_daylight1["lighting_condition"] = "daylight"
 df_daylight2 = util.load_data("Data/Baisu1.json")
@@ -26,4 +24,4 @@ df_corrected = corrector4.predict(corrector2.predict(corrector0.predict(df)))
 fig, ax = plot.plot_comparison_grid(df_corrected, radius=4, rows=4, cols=6)
 #fig, ax = plot.plotHSV(df_corrected)
 #fig, ax = plot.plotHSVError(df_corrected)
-plt.savefig('tmp.png')
+

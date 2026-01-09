@@ -277,7 +277,6 @@ def plot_against_gt(
     color_labels = df[['sample_number', 'label']].drop_duplicates().set_index('sample_number')
 
     # Cast into long format for easier plotting
-    channels = space.get_channels()
     df_long = pd.melt(
         df,
         id_vars=['lighting_condition', 'session_name', 'sample_number', 'capture_index'],
@@ -303,6 +302,7 @@ def plot_against_gt(
     )
 
     # Here starts the plotting part
+    channels = space.get_channels()
     df_plot = df_long.query("channel in @channels")
     g = sns.FacetGrid(df_plot.query(f"lighting_condition == '{lighting_condition.value}' & type in ['raw', 'corrected']"), col="label", col_wrap=6)
     # TODO: decide on which plot to use
@@ -366,3 +366,27 @@ def plot_against_gt(
     g.add_legend()
 
     return g
+
+# ECDF plot helper functions
+def ecdf(x, alpha=0.05):
+    """Compute ECDF for a one-dimensional array of measurements."""
+    n = len(x)
+    x_sorted = np.sort(x)
+    y = np.arange(1, n + 1) / n
+    # DKW confidence intervals
+    width = np.sqrt(np.log(2 / alpha) / (2 * n))
+    lower = np.maximum(y - width, 0)
+    upper = np.minimum(y + width, 1)
+    return x_sorted, y, lower, upper
+
+def plot_ecdf(eucl_raw, eucl_corrected, alpha=0.05, ax=None):
+    """Compute ECDF for a one-dimensional array of measurements."""
+    if ax is None:
+        ax = plt.gca()
+    x_sorted, y, lower, upper = ecdf(eucl_raw, alpha=alpha)
+    ax.step(x_sorted, y, label='raw', where='post', color='blue')
+    ax.fill_between(x_sorted, lower, upper, step='post', alpha=0.2, color='blue')
+    x_sorted, y, lower, upper = ecdf(eucl_corrected, alpha=alpha)
+    ax.step(x_sorted, y, label='corrected', where='post', color='red')
+    ax.fill_between(x_sorted, lower, upper, step='post', alpha=0.2, color='red')
+    return ax

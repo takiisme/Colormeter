@@ -16,12 +16,8 @@ class CorrectionByScaling:
     def __init__(self, space: ColorSpace = ColorSpace.RGB, r: int = 4):
         self.space = space
         self.r = r
-        
-    def train(self, df: pd.DataFrame) -> None:
-        # There is no training for scaling correction.
-        pass
     
-    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply_correction(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Apply scaling correction to the DataFrame measurements.
 
@@ -361,7 +357,7 @@ class CorrectionByModel:
 
         return self.coeffs
     
-    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+    def apply_correction(self, df: pd.DataFrame) -> pd.DataFrame:
         print("coeffs:", self.coeffs)
         # Convert to Lab if needed
         if self.space == ColorSpace.LAB:
