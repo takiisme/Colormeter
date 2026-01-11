@@ -122,7 +122,7 @@ class CorrectionByModel:
             reg_degree: float = 0.,
             reg_pose: float = 0.,
             boundary_penalty_factor: float = 1000,
-            r: int = 4.
+            r: int = 4
         ):
         self.space = space
         self.method = method
