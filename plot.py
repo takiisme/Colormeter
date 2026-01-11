@@ -95,8 +95,8 @@ def plot_comparison_grid(df_final_comparison, radius=4, rows=4, cols=6):
     if radius == 0: plt.savefig('Correction_comparison_R0.png')
     return fig, axes
 
-
-def plotHSV(df):
+# TODO: make r option work
+def plotHSV(df, r=4):
     """
     Plots KDE distributions for H, S, and V error in 3 subplots.
     Returns fig, axes.
@@ -123,35 +123,36 @@ def plotHSV(df):
         return df
 
     # Prepare data
-    df_extended = df_HSV(df, radius=4)
-    df_extended = df_HSV(df_extended, radius=2)
-    df = df_HSV(df_extended, radius=0)
+    # df_extended = df_HSV(df, radius=4)
+    # df_extended = df_HSV(df_extended, radius=2)
+    df = df_HSV(df, radius=r)
 
     hsv_components = ['H', 'S', 'V']
 
     # === 3 SUBPLOTS ===
     fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharey=True)
+    colors = {'Uncorrected': 'blue', 'Corrected': 'red'}
 
     for ax, component in zip(axes, hsv_components):
         uncorr_col = f'{component}_error_uncorr'
         corr_col = f'{component}_error_corr'
 
         sns.kdeplot(x=df[uncorr_col], fill=True, alpha=0.2,
-                    label='Uncorrected', ax=ax)
+                    label='Raw', ax=ax, color=colors['Uncorrected'])
         sns.kdeplot(x=df[corr_col], fill=True, alpha=0.2,
-                    label='Corrected', ax=ax)
+                    label='Corrected', ax=ax, color=colors['Corrected'])
 
-        for col, label_prefix, y_offset in [
-            (uncorr_col, 'Uncorr', 0.9),
-            (corr_col, 'Corr', 0.75)
+        for col, label, y_offset in [
+            (uncorr_col, 'Uncorrected', 0.9),
+            (corr_col, 'Corrected', 0.75)
         ]:
             m = df[col].mean()
             s = df[col].std()
-            ax.axvline(m, linestyle='dashed', linewidth=1)
+            ax.axvline(m, linestyle='dashed', linewidth=1, color=colors[label])
             ax.text(m + 0.01, ax.get_ylim()[1] * y_offset,
-                    f'Mean {label_prefix}: {m:.3f}')
+                    f'Mean: {m:.3f}', color=colors[label])
             ax.text(m + 0.01, ax.get_ylim()[1] * (y_offset - 0.05),
-                    f'Std {label_prefix}: {s:.3f}')
+                    f'Std: {s:.3f}', color=colors[label])
 
         ax.set_title(f'{component} Error')
         ax.set_xlabel(f'Error ({component})')
