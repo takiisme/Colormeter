@@ -359,12 +359,12 @@ class CorrectionByModel:
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
         print("train finished, coeffs shape:", self.coeffs.shape)
-        print("coeffs:", self.coeffs[:5])
+        print("coeffs:", self.coeffs)
 
         return self.coeffs
     
     def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
-        print("coeffs:", self.coeffs)
+        # print("coeffs:", self.coeffs)
         # Convert to Lab if needed
         if self.space == ColorSpace.LAB:
             convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
