@@ -399,3 +399,172 @@ def plot_ecdf(ax: plt.Axes, x: np.ndarray, alpha=0.05, **kwargs) -> plt.Axes:
     # Plot mean line
     # ax.axvline(np.mean(x), color=kwargs.get('color', 'black'), linestyle='dashed', linewidth=1)
     return ax
+
+
+def plot_targeted_results(targeted_results, save_path=None):
+    """Plot the results of targeted cross-validation."""
+    valid_results = {k: v for k, v in targeted_results.items() 
+                    if not np.isnan(v['mse']) and 'error' not in v}
+    
+    if not valid_results:
+        print("\nNo valid results to plot.")
+        return
+    
+    # Prepare data for plotting
+    names = list(valid_results.keys())
+    mses = [valid_results[name]['mse'] for name in names]
+    n_tests = [valid_results[name]['n_test'] for name in names]
+    n_trains = [valid_results[name]['n_train'] for name in names]
+    
+    # Create figure
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Bar plot for MSE
+    bars1 = ax1.bar(range(len(names)), mses, color='steelblue', alpha=0.8)
+    ax1.set_xlabel('Test Set')
+    ax1.set_ylabel('Average MSE')
+    ax1.set_title('Targeted Cross-Validation: Average MSE')
+    ax1.set_xticks(range(len(names)))
+    ax1.set_xticklabels(names, rotation=45, ha='right')
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels on bars
+    for bar, mse in zip(bars1, mses):
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height + 0.001,
+                f'{mse:.3f}', ha='center', va='bottom', fontsize=9)
+    
+    # Bar plot for sample counts
+    x = np.arange(len(names))
+    width = 0.35
+    bars2 = ax2.bar(x - width/2, n_trains, width, label='Training Samples', color='lightgreen', alpha=0.8)
+    bars3 = ax2.bar(x + width/2, n_tests, width, label='Test Samples', color='lightcoral', alpha=0.8)
+    ax2.set_xlabel('Test Set')
+    ax2.set_ylabel('Number of Samples')
+    ax2.set_title('Sample Counts in Targeted Cross-Validation')
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(names, rotation=45, ha='right')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Figure saved to: {save_path}")
+        plt.close()  # Close the figure
+    else:
+        plt.show()
+
+def plot_k_out_results(results_by_k, save_path=None):
+    """Plot the results of k-color-out cross-validation."""
+    valid_k_values = [k for k, v in results_by_k.items() if v is not None]
+    
+    if not valid_k_values:
+        print("No valid results to plot.")
+        return
+    
+    mean_mses = [results_by_k[k]['mean_mse'] for k in valid_k_values]
+    std_mses = [results_by_k[k]['std_mse'] for k in valid_k_values]
+    min_mses = [results_by_k[k]['min_mse'] for k in valid_k_values]
+    max_mses = [results_by_k[k]['max_mse'] for k in valid_k_values]
+    
+    # Create figure with subplots
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
+    
+    # Plot 1: Mean MSE with error bars
+    ax1.errorbar(valid_k_values, mean_mses, yerr=std_mses, fmt='-o', 
+                 capsize=5, capthick=2, ecolor='red', color='blue', linewidth=2)
+    ax1.set_xlabel('Number of Test Samples (k)')
+    ax1.set_ylabel('Average MSE')
+    ax1.set_title('Average MSE vs. Number of Test Samples')
+    ax1.grid(True, alpha=0.3)
+    
+    # Plot 2: Min, Mean, Max MSE
+    ax2.fill_between(valid_k_values, min_mses, max_mses, alpha=0.3, color='gray', label='Range')
+    ax2.plot(valid_k_values, mean_mses, 'b-o', label='Mean')
+    ax2.set_xlabel('Number of Test Samples (k)')
+    ax2.set_ylabel('MSE')
+    ax2.set_title('MSE Range vs. Number of Test Samples')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    
+    # Plot 3: Box plot of MSE distributions
+    mse_data = [results_by_k[k]['mses'] for k in valid_k_values]
+    ax3.boxplot(mse_data, positions=valid_k_values, widths=0.6)
+    ax3.set_xlabel('Number of Test Samples (k)')
+    ax3.set_ylabel('MSE')
+    ax3.set_title('MSE Distribution by k')
+    ax3.grid(True, alpha=0.3)
+    
+    # Plot 4: Standard Deviation
+    ax4.bar(valid_k_values, std_mses, alpha=0.7, color='orange')
+    ax4.set_xlabel('Number of Test Samples (k)')
+    ax4.set_ylabel('Standard Deviation of MSE')
+    ax4.set_title('MSE Variability by k')
+    ax4.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Figure saved to: {save_path}")
+        plt.close()  # Close the figure
+    else:
+        plt.show()
+
+
+def plot_leave_one_out_results(results_df):
+    """Plot leave-one-color-out analysis results."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Plot 1: MSE for each color
+    colors = results_df['left_out_color'].astype(str)
+    mses = results_df['mse']
+    
+    bars = ax1.bar(colors, mses, color='steelblue', alpha=0.7)
+    ax1.set_xlabel('Left-Out Color')
+    ax1.set_ylabel('MSE')
+    ax1.set_title('MSE When Leaving Out Each Color')
+    ax1.tick_params(axis='x', rotation=45)
+    ax1.grid(True, alpha=0.3, axis='y')
+    
+    # Color the top 3 highest MSE bars
+    top_n = min(3, len(results_df))
+    for i in range(top_n):
+        bars[i].set_color('red')
+        ax1.text(bars[i].get_x() + bars[i].get_width()/2., 
+                bars[i].get_height() + 0.01,
+                f'#{i+1}', 
+                ha='center', va='bottom', fontweight='bold')
+    
+    # Plot 2: MSE vs GT RGB values
+    ax2.scatter(results_df['gt_R_mean'], results_df['mse'], 
+                c='red', alpha=0.6, label='R', s=100)
+    ax2.scatter(results_df['gt_G_mean'], results_df['mse'], 
+                c='green', alpha=0.6, label='G', s=100)
+    ax2.scatter(results_df['gt_B_mean'], results_df['mse'], 
+                c='blue', alpha=0.6, label='B', s=100)
+    
+    ax2.set_xlabel('Ground Truth RGB Value')
+    ax2.set_ylabel('MSE')
+    ax2.set_title('MSE vs Ground Truth RGB Values')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig("leave_one_out_analysis.png", dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"\nPlot saved as 'leave_one_out_analysis.png'")
+    
+    # Create a summary of problematic colors
+    problematic = results_df.head(3)
+    print("\n" + "="*80)
+    print("TOP 3 PROBLEMATIC COLORS (Highest MSE when left out):")
+    print("="*80)
+    for i, (_, row) in enumerate(problematic.iterrows(), 1):
+        print(f"\n{i}. Color {row['left_out_color']}:")
+        print(f"   MSE: {row['mse']:.4f}")
+        print(f"   GT RGB: ({row['gt_R_mean']:.0f}, {row['gt_G_mean']:.0f}, {row['gt_B_mean']:.0f})")
+        print(f"   Measured RGB: ({row['color_r4_R_mean']:.0f}, {row['color_r4_G_mean']:.0f}, {row['color_r4_B_mean']:.0f})")

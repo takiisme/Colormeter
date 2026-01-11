@@ -9,6 +9,7 @@ from plot import plot_comparison_grid, plot_against_gt, plotHSV, plotHSVError, p
 from correction import CorrectionByModel, CorrectionByScaling
 from color_conversion import convert_rgb_cols, convert_to_rgb
 from constants import ColorSpace
+from cross_validation import *
 
 df_daylight1 = load_data("Data/Jonas1.json")
 df_daylight1["lighting_condition"] = "daylight"
@@ -99,3 +100,5 @@ axs[1] = plot_ecdf(axs[1], eucl_model_lab, label="model in Lab", color='purple')
 axs[0].legend()
 axs[1].legend()
 fig.savefig("error_ecdf_comparison.png")
+
+results_df = run_leave_one_out_analysis(df_raw)

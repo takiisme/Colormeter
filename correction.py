@@ -16,6 +16,10 @@ class CorrectionByScaling:
     def __init__(self, space: ColorSpace = ColorSpace.RGB, r: int = 4):
         self.space = space
         self.r = r
+        self.coeffs = None
+
+    def train(self, df_train):
+        return self
 
     def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
         """
