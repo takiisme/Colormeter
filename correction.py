@@ -405,32 +405,37 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
 
-    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50):
+    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05):
         """
-        Runs the training process multiple times using resampled data 
-        to estimate model uncertainty.
+        n_iterations: Number of bootstrap samples.
+        alpha: Significance level (e.g., 0.05 for 95% CI).
         """
         self.bootstrapped_coeffs = []
         
         print(f"Starting Bootstrap Training ({n_iterations} iterations)...")
         for i in range(n_iterations):
-            # Resample with replacement
             df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
-            
-            # Use the existing train logic (this updates self.coeffs)
             current_coeffs = self.train(df_resampled)
             
-            # Store a copy of the coefficients for this iteration
             if self.method == 'joint':
                 self.bootstrapped_coeffs.append(current_coeffs.copy())
             else:
                 self.bootstrapped_coeffs.append([c.copy() for c in current_coeffs])
                 
-        # Optional: Set the final self.coeffs to the mean of the bootstrap distribution
+        # Calculate bounds based on user-defined alpha
+        lower_p = (alpha / 2) * 100
+        upper_p = (1 - alpha / 2) * 100
+
+        # Process stats
         if self.method == 'joint':
             self.coeffs = np.mean(self.bootstrapped_coeffs, axis=0)
+            self.coeffs_low = np.percentile(self.bootstrapped_coeffs, lower_p, axis=0)
+            self.coeffs_high = np.percentile(self.bootstrapped_coeffs, upper_p, axis=0)
         else:
+            # For individual method, we iterate per channel
             self.coeffs = [np.mean([run[ch] for run in self.bootstrapped_coeffs], axis=0) for ch in range(3)]
+            self.coeffs_low = [np.percentile([run[ch] for run in self.bootstrapped_coeffs], lower_p, axis=0) for ch in range(3)]
+            self.coeffs_high = [np.percentile([run[ch] for run in self.bootstrapped_coeffs], upper_p, axis=0) for ch in range(3)]
             
-        print("Bootstrap training complete.")
+        print(f"Bootstrap training complete. Interval: [{lower_p}%, {upper_p}%]")
         return self.coeffs
