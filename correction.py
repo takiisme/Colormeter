@@ -143,6 +143,7 @@ class CorrectionByModel:
         self.gt0 = None
         self.gt1 = None
         self.gt2 = None
+        self.bootstrapped_coeffs = []
     
     def build_design_matrix(self):
         """
@@ -403,3 +404,33 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
             df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
+
+    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50):
+        """
+        Runs the training process multiple times using resampled data 
+        to estimate model uncertainty.
+        """
+        self.bootstrapped_coeffs = []
+        
+        print(f"Starting Bootstrap Training ({n_iterations} iterations)...")
+        for i in range(n_iterations):
+            # Resample with replacement
+            df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
+            
+            # Use the existing train logic (this updates self.coeffs)
+            current_coeffs = self.train(df_resampled)
+            
+            # Store a copy of the coefficients for this iteration
+            if self.method == 'joint':
+                self.bootstrapped_coeffs.append(current_coeffs.copy())
+            else:
+                self.bootstrapped_coeffs.append([c.copy() for c in current_coeffs])
+                
+        # Optional: Set the final self.coeffs to the mean of the bootstrap distribution
+        if self.method == 'joint':
+            self.coeffs = np.mean(self.bootstrapped_coeffs, axis=0)
+        else:
+            self.coeffs = [np.mean([run[ch] for run in self.bootstrapped_coeffs], axis=0) for ch in range(3)]
+            
+        print("Bootstrap training complete.")
+        return self.coeffs

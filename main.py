@@ -75,7 +75,38 @@ axs[1] = plot_ecdf(axs[1], eucl_scaling_lab, label="scaling in RGB", color='red'
 
 # Model
 corrector_model = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundary_penalty_factor=0)
-corrector_model.train(df_train)
+corrector_model.train(df_train) # Comment this line out and uncomment the block below leads to bootstrapping on model's weights
+
+##############################################################################
+# Train the model with alpha = 0.05
+# corrector_model.train_with_bootstrap(df_train, n_iterations=100, alpha=0.05)
+
+# # Flatten coefficients for file export
+# # We convert the list of arrays into one large matrix
+# boot_data = np.array(corrector_model.bootstrapped_coeffs)
+# n_iters = boot_data.shape[0]
+# flattened = boot_data.reshape(n_iters, -1)
+
+# # Calculate final statistics
+# means = np.mean(flattened, axis=0)
+# ci_lower = np.percentile(flattened, 2.5, axis=0)
+# ci_upper = np.percentile(flattened, 97.5, axis=0)
+
+# # Create the summary DataFrame
+# param_names = [f"Beta_{i}" for i in range(flattened.shape[1])]
+# summary_df = pd.DataFrame({
+#     'parameter': param_names,
+#     'mean': means,
+#     'ci_025': ci_lower, # 2.5th percentile
+#     'ci_975': ci_upper  # 97.5th percentile
+# })
+
+# # Export to file
+# summary_df.to_csv("model_parameters_95CI.csv", index=False)
+# print("Saved 95% Confidence Intervals to model_parameters_95CI.csv")
+
+
+#############################################################################
 df_test = corrector_model.apply_correction(df_test, prefix="model_correction")
 # Something that we probably shouldn't do: apply correction to the whole test set at once.
 # df_test = df
@@ -100,5 +131,4 @@ axs[1] = plot_ecdf(axs[1], eucl_model_lab, label="model in Lab", color='purple')
 axs[0].legend()
 axs[1].legend()
 fig.savefig("error_ecdf_comparison.png")
-
-results_df = run_leave_one_out_analysis(df_raw)
+#run_comprehensive_cross_validation(df_raw)
