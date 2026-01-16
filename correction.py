@@ -7,6 +7,7 @@ from sklearn.metrics import mean_squared_error
 import math
 from functools import partial
 from scipy.optimize import minimize
+from tqdm import tqdm
 
 from constants import ColorSpace
 from color_conversion import convert_rgb_cols
@@ -305,7 +306,7 @@ class CorrectionByModel:
     # Train the correction model    
     # Store and return the coefficients
     # ==========
-    def train(self, df: pd.DataFrame):
+    def train(self, df: pd.DataFrame, verbose: bool = False):
         # Transfer the measured RGB to lab color space if it's going to be optimized in lab space
         if self.space == ColorSpace.LAB:
             convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
@@ -359,8 +360,9 @@ class CorrectionByModel:
                     options={'maxiter': 1000, 'ftol': 1e-8}
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
-        print("train finished, coeffs shape:", self.coeffs.shape)
-        print("coeffs:", self.coeffs)
+        if verbose:
+            print("train finished, coeffs shape:", self.coeffs.shape)
+            print("coeffs:", self.coeffs)
 
         return self.coeffs
     
@@ -405,16 +407,26 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
 
-    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05):
+    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False):
         """
         n_iterations: Number of bootstrap samples.
         alpha: Significance level (e.g., 0.05 for 95% CI).
+        stratified: Whether to use stratified sampling based on colors.
         """
         self.bootstrapped_coeffs = []
         
         print(f"Starting Bootstrap Training ({n_iterations} iterations)...")
-        for i in range(n_iterations):
-            df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
+        for i in tqdm(range(n_iterations)):
+            if stratified:
+                # [df.columns] is to avoid a warning, see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas#comment138728728_44115314
+                df_resampled = df.groupby(
+                    'sample_number', group_keys=False  # 'sample_number' == color ID
+                )[df.columns].apply(
+                    lambda x: x.sample(frac=1.0, replace=True, random_state=i)
+                ).reset_index(drop=True)
+            else:
+                df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
+
             current_coeffs = self.train(df_resampled)
             
             if self.method == 'joint':
@@ -431,11 +443,13 @@ class CorrectionByModel:
             self.coeffs = np.mean(self.bootstrapped_coeffs, axis=0)
             self.coeffs_low = np.percentile(self.bootstrapped_coeffs, lower_p, axis=0)
             self.coeffs_high = np.percentile(self.bootstrapped_coeffs, upper_p, axis=0)
+            self.coeffs_std = np.std(self.bootstrapped_coeffs, axis=0)
         else:
             # For individual method, we iterate per channel
             self.coeffs = [np.mean([run[ch] for run in self.bootstrapped_coeffs], axis=0) for ch in range(3)]
             self.coeffs_low = [np.percentile([run[ch] for run in self.bootstrapped_coeffs], lower_p, axis=0) for ch in range(3)]
             self.coeffs_high = [np.percentile([run[ch] for run in self.bootstrapped_coeffs], upper_p, axis=0) for ch in range(3)]
-            
+            self.coeffs_std = [np.std([run[ch] for run in self.bootstrapped_coeffs], axis=0) for ch in range(3)]
+
         print(f"Bootstrap training complete. Interval: [{lower_p}%, {upper_p}%]")
         return self.coeffs
