@@ -20,6 +20,7 @@ class CorrectionByScaling:
         self.coeffs = None
 
     def train(self, df_train):
+        # No training needed for scaling correction
         return self
 
     def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
@@ -129,22 +130,27 @@ class CorrectionByModel:
             boundary_penalty_factor: float = 1000,
             r: int = 4
         ):
+        # Data loading parameters
         self.space = space
         self.method = method
+        self.r = r
         self.pose = pose
+        
+        # Hyperparameters
         self.degree = degree
         self.reg_degree = reg_degree
         self.reg_pose = reg_pose
         self.boundary_penalty_factor = boundary_penalty_factor
-        self.r = r
+
         self.coeffs = []
+        
+        # Placeholders for color channels
         self.m0 = None
         self.m1 = None
         self.m2 = None
         self.gt0 = None
         self.gt1 = None
         self.gt2 = None
-        self.bootstrapped_coeffs = []
     
     def build_design_matrix(self):
         """
@@ -213,10 +219,7 @@ class CorrectionByModel:
 
             return X_list
 
-        
-    # ==========
     # Compute unclipped corrected values
-    # ==========
     def compute_corrected_values(self, coeffs, X, channel=None):
         if self.method == 'joint':
             # reshape to (num_coeffs, 3)
@@ -229,11 +232,9 @@ class CorrectionByModel:
             # Return specific channel value
             return corrected
 
-    # ==========
     # The loss is composed of 4 parts: MSE loss + boundary penalty + reg_degree + reg_pose (if applicable)
     # For joint method, it computes the loss for all 3 channels together
     # For individual method, it computes the loss for a specific channel
-    # ==========
     def calculate_loss(self, coeffs, channel=None):
         
         X = self.build_design_matrix()
@@ -300,13 +301,21 @@ class CorrectionByModel:
             if self.pose:
                 reg_penalty += self.reg_pose * np.sum(np.abs(X[-2: ])) # pitch and roll
             return mse_loss + boundary_penalty + reg_penalty
-        
 
-    # ==========
-    # Train the correction model    
-    # Store and return the coefficients
-    # ==========
-    def train(self, df: pd.DataFrame, verbose: bool = False):
+    def train(self, df: pd.DataFrame, verbose: bool = False) -> np.ndarray:
+        """
+        Train the correction model. Store and return the coefficients.
+        
+        Parameters:
+        ----------
+        df : pd.DataFrame
+            DataFrame containing measurement and ground truth columns.
+        verbose : bool
+            Whether to print coeffcients.
+
+        Returns: np.ndarray
+            Trained coefficients
+        """
         # Transfer the measured RGB to lab color space if it's going to be optimized in lab space
         if self.space == ColorSpace.LAB:
             convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
@@ -367,8 +376,18 @@ class CorrectionByModel:
         return self.coeffs
     
     def apply_correction(self, df: pd.DataFrame, prefix="correction") -> pd.DataFrame:
-        # print("coeffs:", self.coeffs)
-        # Convert to Lab if needed
+        """
+        Apply the trained correction model to the DataFrame measurements.
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing measurement and ground truth columns.
+        prefix : str
+            Prefix for the correction columns.
+
+        Returns: pd.DataFrame
+            DataFrame with added correction columns.
+        """
         if self.space == ColorSpace.LAB:
             convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
             convert_rgb_cols(df, prefix=f'color_r{self.r}_', to=ColorSpace.LAB)
@@ -407,11 +426,24 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
 
-    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False):
+    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False) -> np.ndarray:
         """
-        n_iterations: Number of bootstrap samples.
-        alpha: Significance level (e.g., 0.05 for 95% CI).
-        stratified: Whether to use stratified sampling based on colors.
+        Train the correction model with (stratified) bootstrap.
+        Store the bootstrap standard error estimates and percentile confidence intervals.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            DataFrame containing measurement and ground truth columns.
+        n_iterations: int
+            Number of bootstrap samples.
+        alpha: float
+            Significance level.
+        stratified: bool
+            Whether to use stratified bootstrap per color.
+
+        Returns: np.ndarray
+            Trained coefficients (mean of bootstrapped coefficients).
         """
         self.bootstrapped_coeffs = []
         
