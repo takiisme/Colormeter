@@ -79,31 +79,31 @@ corrector_model.train(df_train) # Comment this line out and uncomment the block 
 
 ##############################################################################
 # Train the model with alpha = 0.05
-# corrector_model.train_with_bootstrap(df_train, n_iterations=100, alpha=0.05)
+corrector_model.train_with_bootstrap(df_train, n_iterations=100, alpha=0.05)
 
-# # Flatten coefficients for file export
-# # We convert the list of arrays into one large matrix
-# boot_data = np.array(corrector_model.bootstrapped_coeffs)
-# n_iters = boot_data.shape[0]
-# flattened = boot_data.reshape(n_iters, -1)
+# Flatten coefficients for file export
+# We convert the list of arrays into one large matrix
+boot_data = np.array(corrector_model.bootstrapped_coeffs)
+n_iters = boot_data.shape[0]
+flattened = boot_data.reshape(n_iters, -1)
 
-# # Calculate final statistics
-# means = np.mean(flattened, axis=0)
-# ci_lower = np.percentile(flattened, 2.5, axis=0)
-# ci_upper = np.percentile(flattened, 97.5, axis=0)
+# Calculate final statistics
+means = np.mean(flattened, axis=0)
+ci_lower = np.percentile(flattened, 2.5, axis=0)
+ci_upper = np.percentile(flattened, 97.5, axis=0)
 
-# # Create the summary DataFrame
-# param_names = [f"Beta_{i}" for i in range(flattened.shape[1])]
-# summary_df = pd.DataFrame({
-#     'parameter': param_names,
-#     'mean': means,
-#     'ci_025': ci_lower, # 2.5th percentile
-#     'ci_975': ci_upper  # 97.5th percentile
-# })
+# Create the summary DataFrame
+param_names = [f"Beta_{i}" for i in range(flattened.shape[1])]
+summary_df = pd.DataFrame({
+    'parameter': param_names,
+    'mean': means,
+    'ci_025': ci_lower, # 2.5th percentile
+    'ci_975': ci_upper  # 97.5th percentile
+})
 
-# # Export to file
-# summary_df.to_csv("model_parameters_95CI.csv", index=False)
-# print("Saved 95% Confidence Intervals to model_parameters_95CI.csv")
+# Export to file
+summary_df.to_csv("model_parameters_95CI.csv", index=False)
+print("Saved 95% Confidence Intervals to model_parameters_95CI.csv")
 
 
 #############################################################################
