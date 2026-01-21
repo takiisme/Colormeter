@@ -77,7 +77,7 @@ corrector_model = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundar
 corrector_model.train(df_train) # Comment this line out and uncomment the block below leads to bootstrapping on model's weights
 df_test = corrector_model.apply_correction(df_test)
 df_test.to_csv("test_unclipped.csv", index=False)
-
+exit()
 ##############################################################################
 # Train the model with alpha = 0.05
 corrector_model.train_with_bootstrap(df_train, n_iterations=100, alpha=0.05)

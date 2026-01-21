@@ -441,9 +441,12 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_G'] = np.clip(c1, 0, 255).astype(int)
             df[f'{prefix}_r{self.r}_B'] = np.clip(c2, 0, 255).astype(int)
         elif self.space == ColorSpace.LAB:
-            df[f'{prefix}_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
-            df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
-            df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+            # df[f'{prefix}_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
+            # df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
+            # df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+            df[f'{prefix}_r{self.r}_l'] = c0
+            df[f'{prefix}_r{self.r}_a'] = c1
+            df[f'{prefix}_r{self.r}_b'] = c2
         return df
 
     def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False) -> np.ndarray:
