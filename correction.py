@@ -151,6 +151,11 @@ class CorrectionByModel:
         self.gt0 = None
         self.gt1 = None
         self.gt2 = None
+        self.w0 = None
+        self.w1 = None
+        self.w2 = None
+        self.pitch = None
+        self.roll = None
     
     def build_design_matrix(self):
         """
@@ -174,6 +179,9 @@ class CorrectionByModel:
         m0 = self.m0
         m1 = self.m1
         m2 = self.m2
+        w0 = self.w0
+        w1 = self.w1
+        w2 = self.w2
         N = len(m0)
 
         # pose terms
@@ -192,9 +200,10 @@ class CorrectionByModel:
 
             # degree 1 to degree D
             for d in range(1, self.degree + 1):
-                for i, j, k in itertools.product(range(d + 1), repeat=3):
-                    if i + j + k == d:
-                        term = (m0 ** i) * (m1 ** j) * (m2 ** k)
+                for combo in itertools.product(range(d + 1), repeat=6):
+                    if sum(combo) == d:
+                        i, j, k, l, m, n = combo
+                        term = (m0 ** i) * (m1 ** j) * (m2 ** k) * (w0 ** l) * (w1 ** m) * (w2 ** n)
                         terms.append(term.reshape(N, 1))
 
             # append pose at the end
@@ -205,12 +214,14 @@ class CorrectionByModel:
 
         if self.method == 'individual':
             X_list = []
-    
-            for m in [m0, m1, m2]:
+
+            for m, w in zip([m0, m1, m2], [w0, w1, w2]):
                 terms = [np.ones((N, 1))]
 
                 for d in range(1, self.degree + 1):
-                    terms.append((m ** d).reshape(N, 1))
+                    for i in range(d + 1):
+                        term = (m ** i) * (w ** (d - i))
+                        terms.append(term.reshape(N, 1))
 
                 if self.pose:
                     terms.extend(pose_terms)
@@ -236,7 +247,6 @@ class CorrectionByModel:
     # For joint method, it computes the loss for all 3 channels together
     # For individual method, it computes the loss for a specific channel
     def calculate_loss(self, coeffs, channel=None):
-        
         X = self.build_design_matrix()
 
         if self.method == 'joint':
@@ -262,16 +272,18 @@ class CorrectionByModel:
             # Compute regularization penalty
             reg_penalty = 0
             idx = 1  # skip constant term
+            c_reshaped = coeffs.reshape(-1, 3)
+
             # Compute regularization for degree terms
             for d in range(1, self.degree + 1):
                 # number of monomials with total degree = d
-                num_terms = math.comb(d + 2, 2)
+                num_terms = math.comb(d + 5, 5)
                 # L1 regularization
-                reg_penalty += (self.reg_degree ** d) * np.sum(np.abs(X[:, idx:idx + num_terms]))
+                reg_penalty += (self.reg_degree ** d) * np.sum(np.abs(c_reshaped[idx:idx + num_terms]))
                 idx += num_terms
             # Compute regularization for pose terms
             if self.pose:
-                reg_penalty += self.reg_pose * np.sum(np.abs(X[:, -2:])) # pitch and roll
+                reg_penalty += self.reg_pose * np.sum(np.abs(c_reshaped[-2: ])) # pitch and roll
             return mse_loss + boundary_penalty + reg_penalty
         elif self.method == 'individual':
             c = self.compute_corrected_values(coeffs, X, channel)
@@ -291,15 +303,17 @@ class CorrectionByModel:
                 boundary_penalty = (np.mean((c < -128) | (c > 127))) * self.boundary_penalty_factor
             # Compute regularization penalty
             reg_penalty = 0
+            Xc = X[channel]
             idx = 1  # skip constant term
             # Compute regularization for degree terms
             for d in range(1, self.degree + 1):
                 # L1 regularization
-                reg_penalty += (self.reg_degree ** d) * np.sum(np.abs(X[idx: idx + 1]))
-                idx += 1
+                num_terms = d + 1  # number of monomials with total degree = d for individual channel
+                reg_penalty += (self.reg_degree ** d) * np.sum(np.abs(coeffs[idx: idx + num_terms]))
+                idx += num_terms
             # Compute regularization for pose terms
             if self.pose:
-                reg_penalty += self.reg_pose * np.sum(np.abs(X[-2: ])) # pitch and roll
+                reg_penalty += self.reg_pose * np.sum(np.abs(coeffs[-2: ])) # pitch and roll
             return mse_loss + boundary_penalty + reg_penalty
 
     def train(self, df: pd.DataFrame, verbose: bool = False) -> np.ndarray:
@@ -333,6 +347,9 @@ class CorrectionByModel:
             self.gt0 = df['gt__R'].values
             self.gt1 = df['gt__G'].values
             self.gt2 = df['gt__B'].values
+        self.w0 = df[f'white_r{self.r}_R'].values
+        self.w1 = df[f'white_r{self.r}_G'].values
+        self.w2 = df[f'white_r{self.r}_B'].values
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         
@@ -404,6 +421,9 @@ class CorrectionByModel:
             self.gt0 = df['gt__R'].values
             self.gt1 = df['gt__G'].values
             self.gt2 = df['gt__B'].values
+        self.w0 = df[f'white_r{self.r}_R'].values
+        self.w1 = df[f'white_r{self.r}_G'].values
+        self.w2 = df[f'white_r{self.r}_B'].values
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         # Compute unclipped corrected values
@@ -440,7 +460,6 @@ class CorrectionByModel:
         alpha: float
             Significance level.
         stratified: bool
-            Whether to use stratified bootstrap per color.
 
         Returns: np.ndarray
             Trained coefficients (mean of bootstrapped coefficients).

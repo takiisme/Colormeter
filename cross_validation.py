@@ -11,7 +11,7 @@ from constants import ColorSpace
 from plot import plot_k_out_results, plot_targeted_results, plot_leave_one_out_results
 
 
-def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=20, **model_kwargs):
+def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
     """
     Perform k-color-out cross-validation as specified.
     
@@ -348,7 +348,7 @@ def run_comprehensive_cross_validation(df_train):
         iterations_per_k=20,
         space=ColorSpace.LAB,
         method='joint',
-        degree=2,
+        degree=1,
         pose=True,
         reg_degree=0.0,
         reg_pose=0.0,
@@ -374,7 +374,7 @@ def run_comprehensive_cross_validation(df_train):
         test_sets_dict=default_test_sets,
         space=ColorSpace.LAB,
         method='joint',
-        degree=2,
+        degree=1,
         pose=True,
         reg_degree=0.0,
         reg_pose=0.0,
@@ -403,7 +403,7 @@ def run_comprehensive_cross_validation(df_train):
         test_sets_dict=extreme_test_sets,
         space=ColorSpace.LAB,
         method='joint',
-        degree=2,
+        degree=1,
         pose=True,
         reg_degree=0.0,
         reg_pose=0.0,
@@ -412,7 +412,7 @@ def run_comprehensive_cross_validation(df_train):
     )
     
     return {
-        'k_out_results': k_out_results,
+        #'k_out_results': k_out_results,
         'targeted_results': targeted_results,
         'extreme_results': extreme_results
     }
@@ -524,9 +524,9 @@ def run_leave_one_out_analysis(df_train):
     results = leave_one_color_out_analysis(
         df_train=df_train,
         model_class=CorrectionByModel,
-        space=ColorSpace.RGB,
+        space=ColorSpace.LAB,
         method='joint',
-        degree=2,
+        degree=1,
         pose=True,
         reg_degree=0.0,
         reg_pose=0.0,
@@ -546,9 +546,9 @@ def compare_models_leave_one_out(df_train):
             'name': 'CorrectionByModel (RGB, joint, degree=2)',
             'class': CorrectionByModel,
             'params': {
-                'space': ColorSpace.RGB,
+                'space': ColorSpace.LAB,
                 'method': 'joint',
-                'degree': 2,
+                'degree': 1,
                 'pose': True,
                 'reg_degree': 0.0,
                 'reg_pose': 0.0,
