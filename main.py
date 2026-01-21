@@ -36,46 +36,47 @@ df = convert_rgb_cols(df, prefix="color_r4_", to=ColorSpace.LAB)
 df_train = df.sample(frac=0.66, random_state=0)
 df_test = df.drop(df_train.index)
 
+# corrector_scaling = CorrectionByScaling(space=ColorSpace.RGB, r=4)
+# df_test = corrector_scaling.apply_correction(df_test, prefix="scaling_correction")
+# df_test = convert_rgb_cols(df_test, prefix="scaling_correction_r4_", to=ColorSpace.LAB)
 
-corrector_scaling = CorrectionByScaling(space=ColorSpace.RGB, r=4)
-df_test = corrector_scaling.apply_correction(df_test, prefix="scaling_correction")
-df_test = convert_rgb_cols(df_test, prefix="scaling_correction_r4_", to=ColorSpace.LAB)
+# fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+# axs[0].set_title("RGB Euclidean Error ECDF")
+# axs[0].set_xlabel("Euclidean Error")
+# axs[1].set_title("Lab Euclidean Error ECDF")
+# axs[1].set_xlabel("Euclidean Error")
 
-axs[0].set_title("RGB Euclidean Error ECDF")
-axs[0].set_xlabel("Euclidean Error")
-axs[1].set_title("Lab Euclidean Error ECDF")
-axs[1].set_xlabel("Euclidean Error")
-
-eucl_raw_rgb = np.sqrt(
-    (df_test["color_r4_R"] - df_test["gt__R"])**2 + \
-    (df_test["color_r4_G"] - df_test["gt__G"])**2 + \
-    (df_test["color_r4_B"] - df_test["gt__B"])**2
-)
-axs[0] = plot_ecdf(axs[0], eucl_raw_rgb, label="raw", color='blue')
-eucl_scaling_rgb = np.sqrt(
-    (df_test["scaling_correction_r4_R"] - df_test["gt__R"])**2 + \
-    (df_test["scaling_correction_r4_G"] - df_test["gt__G"])**2 + \
-    (df_test["scaling_correction_r4_B"] - df_test["gt__B"])**2
-)
-axs[0] = plot_ecdf(axs[0], eucl_scaling_rgb, label="scaling in RGB", color='red')
-eucl_raw_lab = np.sqrt(
-    (df_test["color_r4_l"] - df_test["gt__l"])**2 + \
-    (df_test["color_r4_a"] - df_test["gt__a"])**2 + \
-    (df_test["color_r4_b"] - df_test["gt__b"])**2
-)
-axs[1] = plot_ecdf(axs[1], eucl_raw_lab, label="raw", color='blue')
-eucl_scaling_lab = np.sqrt(
-    (df_test["scaling_correction_r4_l"] - df_test["gt__l"])**2 + \
-    (df_test["scaling_correction_r4_a"] - df_test["gt__a"])**2 + \
-    (df_test["scaling_correction_r4_b"] - df_test["gt__b"])**2
-)
-axs[1] = plot_ecdf(axs[1], eucl_scaling_lab, label="scaling in RGB", color='red')
+# eucl_raw_rgb = np.sqrt(
+#     (df_test["color_r4_R"] - df_test["gt__R"])**2 + \
+#     (df_test["color_r4_G"] - df_test["gt__G"])**2 + \
+#     (df_test["color_r4_B"] - df_test["gt__B"])**2
+# )
+# axs[0] = plot_ecdf(axs[0], eucl_raw_rgb, label="raw", color='blue')
+# eucl_scaling_rgb = np.sqrt(
+#     (df_test["scaling_correction_r4_R"] - df_test["gt__R"])**2 + \
+#     (df_test["scaling_correction_r4_G"] - df_test["gt__G"])**2 + \
+#     (df_test["scaling_correction_r4_B"] - df_test["gt__B"])**2
+# )
+# axs[0] = plot_ecdf(axs[0], eucl_scaling_rgb, label="scaling in RGB", color='red')
+# eucl_raw_lab = np.sqrt(
+#     (df_test["color_r4_l"] - df_test["gt__l"])**2 + \
+#     (df_test["color_r4_a"] - df_test["gt__a"])**2 + \
+#     (df_test["color_r4_b"] - df_test["gt__b"])**2
+# )
+# axs[1] = plot_ecdf(axs[1], eucl_raw_lab, label="raw", color='blue')
+# eucl_scaling_lab = np.sqrt(
+#     (df_test["scaling_correction_r4_l"] - df_test["gt__l"])**2 + \
+#     (df_test["scaling_correction_r4_a"] - df_test["gt__a"])**2 + \
+#     (df_test["scaling_correction_r4_b"] - df_test["gt__b"])**2
+# )
+# axs[1] = plot_ecdf(axs[1], eucl_scaling_lab, label="scaling in RGB", color='red')
 
 # Model
 corrector_model = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundary_penalty_factor=0)
 corrector_model.train(df_train) # Comment this line out and uncomment the block below leads to bootstrapping on model's weights
+df_test = corrector_model.apply_correction(df_test)
+df_test.to_csv("test_unclipped.csv", index=False)
 
 ##############################################################################
 # Train the model with alpha = 0.05
