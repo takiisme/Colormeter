@@ -198,7 +198,7 @@ class CorrectionByModel:
             # degree 0
             terms.append(np.ones((N, 1)))
 
-            # degree 1 to degree D
+            # degrees 1 to D
             for d in range(1, self.degree + 1):
                 for combo in itertools.product(range(d + 1), repeat=6):
                     if sum(combo) == d:
@@ -360,12 +360,14 @@ class CorrectionByModel:
             loss_function = partial(
                 self.calculate_loss
             )
+            print("Starting optimization...")
             optimal_joint_coeffs = minimize(
                 loss_function,
                 x0=x0,
-                method='L-BFGS-B',
-                options={'maxiter': 1000, 'ftol': 1e-8}
+                # method='L-BFGS-B',
+                # options={'maxiter': 1000, 'ftol': 1e-8}
             )
+            print("Optimization finished.")
             self.coeffs = optimal_joint_coeffs.x.reshape(-1, 3)
         elif self.method == 'individual':
             self.coeffs = [None, None, None]
@@ -382,8 +384,8 @@ class CorrectionByModel:
                 optimal_individual_coeffs = minimize(
                     loss_function,
                     x0=x0,
-                    method='L-BFGS-B',
-                    options={'maxiter': 1000, 'ftol': 1e-8}
+                    # method='L-BFGS-B',
+                    # options={'maxiter': 1000, 'ftol': 1e-8}
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
         if verbose:
@@ -441,9 +443,12 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_G'] = np.clip(c1, 0, 255).astype(int)
             df[f'{prefix}_r{self.r}_B'] = np.clip(c2, 0, 255).astype(int)
         elif self.space == ColorSpace.LAB:
-            df[f'{prefix}_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
-            df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
-            df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+            # df[f'{prefix}_r{self.r}_l'] = np.clip(c0, 0.0, 100.0)
+            # df[f'{prefix}_r{self.r}_a'] = np.clip(c1, -128.0, 127.0)
+            # df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
+            df[f'{prefix}_r{self.r}_l'] = c0
+            df[f'{prefix}_r{self.r}_a'] = c1
+            df[f'{prefix}_r{self.r}_b'] = c2
         return df
 
     def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False) -> np.ndarray:

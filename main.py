@@ -73,62 +73,85 @@ eucl_scaling_lab = np.sqrt(
 )
 axs[1] = plot_ecdf(axs[1], eucl_scaling_lab, label="scaling in RGB", color='red')
 
-# Model
-corrector_model = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundary_penalty_factor=0)
-corrector_model.train(df_train) # Comment this line out and uncomment the block below leads to bootstrapping on model's weights
+# # Model 0: no pitch & roll
+# corrector_model_0 = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundary_penalty_factor=0, pose=False)
+# corrector_model_0.train(df_train.copy())
 
-##############################################################################
-# Train the model with alpha = 0.05
-corrector_model.train_with_bootstrap(df_train, n_iterations=100, alpha=0.05)
+# # Model 1: with pitch & roll
+# corrector_model_1 = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundary_penalty_factor=0, pose=True)
+# corrector_model_1.train(df_train.copy())
 
-# Flatten coefficients for file export
-# We convert the list of arrays into one large matrix
-boot_data = np.array(corrector_model.bootstrapped_coeffs)
-n_iters = boot_data.shape[0]
-flattened = boot_data.reshape(n_iters, -1)
+# # ##############################################################################
+# # Train the model with alpha = 0.05
+# corrector_model_0.train_with_bootstrap(df_train.copy(), n_iterations=100, alpha=0.05)
+# corrector_model_1.train_with_bootstrap(df_train.copy(), n_iterations=100, alpha=0.05)
 
-# Calculate final statistics
-means = np.mean(flattened, axis=0)
-ci_lower = np.percentile(flattened, 2.5, axis=0)
-ci_upper = np.percentile(flattened, 97.5, axis=0)
+# boot_coeffs_0 = np.array(corrector_model_0.bootstrapped_coeffs)
+# boot_coeffs_1 = np.array(corrector_model_1.bootstrapped_coeffs)
+# np.savez("bootstrapped_coefficients_pose.npz", model_0=boot_coeffs_0, model_1=boot_coeffs_1)
 
-# Create the summary DataFrame
-param_names = [f"Beta_{i}" for i in range(flattened.shape[1])]
-summary_df = pd.DataFrame({
-    'parameter': param_names,
-    'mean': means,
-    'ci_025': ci_lower, # 2.5th percentile
-    'ci_975': ci_upper  # 97.5th percentile
-})
+# # Flatten coefficients for file export
+# # We convert the list of arrays into one large matrix
+# boot_data = np.array(corrector_model.bootstrapped_coeffs)
+# n_iters = boot_data.shape[0]
+# flattened = boot_data.reshape(n_iters, -1)
 
-# Export to file
-summary_df.to_csv("model_parameters_95CI.csv", index=False)
-print("Saved 95% Confidence Intervals to model_parameters_95CI.csv")
+# # Calculate final statistics
+# means = np.mean(flattened, axis=0)
+# ci_lower = np.percentile(flattened, 2.5, axis=0)
+# ci_upper = np.percentile(flattened, 97.5, axis=0)
+
+# # Create the summary DataFrame
+# param_names = [f"Beta_{i}" for i in range(flattened.shape[1])]
+# summary_df = pd.DataFrame({
+#     'parameter': param_names,
+#     'mean': means,
+#     'ci_025': ci_lower, # 2.5th percentile
+#     'ci_975': ci_upper  # 97.5th percentile
+# })
+
+# # Export to file
+# summary_df.to_csv("model_parameters_95CI.csv", index=False)
+# print("Saved 95% Confidence Intervals to model_parameters_95CI.csv")
 
 
 #############################################################################
-df_test = corrector_model.apply_correction(df_test, prefix="model_correction")
+df_test = corrector_model_0.apply_correction(df_test, prefix="model_correction_0")
+df_test = corrector_model_1.apply_correction(df_test, prefix="model_correction_1")
 # Something that we probably shouldn't do: apply correction to the whole test set at once.
 # df_test = df
 # df_test = corrector_model.apply_correction(df_test, prefix="model_correction")
 
 df_test = convert_rgb_cols(df_test, prefix="gt__", to=ColorSpace.LAB)
-df_test = convert_to_rgb(df_test, prefix="model_correction_r4_", from_space=ColorSpace.LAB)
+df_test = convert_to_rgb(df_test, prefix="model_correction_0_r4_", from_space=ColorSpace.LAB)
+df_test = convert_to_rgb(df_test, prefix="model_correction_1_r4_", from_space=ColorSpace.LAB)
 
-eucl_model_rgb = np.sqrt(
-    (df_test["model_correction_r4_R"] - df_test["gt__R"])**2 + \
-    (df_test["model_correction_r4_G"] - df_test["gt__G"])**2 + \
-    (df_test["model_correction_r4_B"] - df_test["gt__B"])**2
+eucl_model_0_rgb = np.sqrt(
+    (df_test["model_correction_0_r4_R"] - df_test["gt__R"])**2 + \
+    (df_test["model_correction_0_r4_G"] - df_test["gt__G"])**2 + \
+    (df_test["model_correction_0_r4_B"] - df_test["gt__B"])**2
 )
-axs[0] = plot_ecdf(axs[0], eucl_model_rgb, label="model in Lab", color='purple')
-eucl_model_lab = np.sqrt(
-    (df_test["model_correction_r4_l"] - df_test["gt__l"])**2 + \
-    (df_test["model_correction_r4_a"] - df_test["gt__a"])**2 + \
-    (df_test["model_correction_r4_b"] - df_test["gt__b"])**2
+eucl_model_1_rgb = np.sqrt(
+    (df_test["model_correction_1_r4_R"] - df_test["gt__R"])**2 + \
+    (df_test["model_correction_1_r4_G"] - df_test["gt__G"])**2 + \
+    (df_test["model_correction_1_r4_B"] - df_test["gt__B"])**2
 )
-axs[1] = plot_ecdf(axs[1], eucl_model_lab, label="model in Lab", color='purple')
+axs[0] = plot_ecdf(axs[0], eucl_model_0_rgb, label="model 0 in RGB", color='purple')
+axs[0] = plot_ecdf(axs[0], eucl_model_1_rgb, label="model 1 in RGB", color='green')
+eucl_model_0_lab = np.sqrt(
+    (df_test["model_correction_0_r4_l"] - df_test["gt__l"])**2 + \
+    (df_test["model_correction_0_r4_a"] - df_test["gt__a"])**2 + \
+    (df_test["model_correction_0_r4_b"] - df_test["gt__b"])**2
+)
+eucl_model_1_lab = np.sqrt(
+    (df_test["model_correction_1_r4_l"] - df_test["gt__l"])**2 + \
+    (df_test["model_correction_1_r4_a"] - df_test["gt__a"])**2 + \
+    (df_test["model_correction_1_r4_b"] - df_test["gt__b"])**2
+)
+axs[1] = plot_ecdf(axs[1], eucl_model_0_lab, label="model 0 in Lab", color='purple')
+axs[1] = plot_ecdf(axs[1], eucl_model_1_lab, label="model 1 in Lab", color='green')
 
 axs[0].legend()
 axs[1].legend()
-fig.savefig("error_ecdf_comparison.png")
+fig.savefig("error_ecdf_comparison_pose.png")
 #run_comprehensive_cross_validation(df_raw)
