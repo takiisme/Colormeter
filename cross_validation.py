@@ -362,10 +362,13 @@ def run_comprehensive_cross_validation(df_train):
     
     # Define default color categories
     default_test_sets = {
-        'Blue-ish': [3, 6, 8, 13, 18],
+        'Red-ish': [7, 9, 12, 15],
         'Green-ish': [4, 6, 11, 14],
+        'Blue-ish': [3, 5, 6, 8, 13, 18],
         'Neutral': [19, 20, 21, 22, 23, 24],
-        'Red-ish': [7, 9, 12, 15]
+        'Top_5_R': df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist(),
+        'Top_5_G': df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist(),
+        'Top_5_B': df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
     }
     
     targeted_results = targeted_cross_validation(
@@ -382,39 +385,39 @@ def run_comprehensive_cross_validation(df_train):
         r=4
     )
     
-    # 3. Optional: Extreme RGB targeted validation
-    print("\n\n3. EXTREME RGB TARGETED VALIDATION")
-    print("-"*50)
+    # # 3. Optional: Extreme RGB targeted validation
+    # print("\n\n3. EXTREME RGB TARGETED VALIDATION")
+    # print("-"*50)
     
-    # Find extreme RGB samples
-    max_r_samples = df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist()
-    max_g_samples = df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist()
-    max_b_samples = df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
+    # # Find extreme RGB samples
+    # max_r_samples = df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist()
+    # max_g_samples = df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist()
+    # max_b_samples = df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
     
-    extreme_test_sets = {
-        'Top_5_R': max_r_samples,
-        'Top_5_G': max_g_samples,
-        'Top_5_B': max_b_samples
-    }
+    # extreme_test_sets = {
+    #     'Top_5_R': max_r_samples,
+    #     'Top_5_G': max_g_samples,
+    #     'Top_5_B': max_b_samples
+    # }
     
-    extreme_results = targeted_cross_validation(
-        model_class=CorrectionByModel,
-        df_train=df_train,
-        test_sets_dict=extreme_test_sets,
-        space=ColorSpace.LAB,
-        method='joint',
-        degree=1,
-        pose=True,
-        reg_degree=0.0,
-        reg_pose=0.0,
-        boundary_penalty_factor=0.0001,
-        r=4
-    )
+    # extreme_results = targeted_cross_validation(
+    #     model_class=CorrectionByModel,
+    #     df_train=df_train,
+    #     test_sets_dict=extreme_test_sets,
+    #     space=ColorSpace.LAB,
+    #     method='joint',
+    #     degree=1,
+    #     pose=True,
+    #     reg_degree=0.0,
+    #     reg_pose=0.0,
+    #     boundary_penalty_factor=0.0001,
+    #     r=4
+    # )
     
     return {
-        #'k_out_results': k_out_results,
+        'k_out_results': k_out_results,
         'targeted_results': targeted_results,
-        'extreme_results': extreme_results
+        #'extreme_results': extreme_results
     }
 
 

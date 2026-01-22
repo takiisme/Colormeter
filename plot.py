@@ -470,39 +470,39 @@ def plot_k_out_results(results_by_k, save_path=None):
     max_mses = [results_by_k[k]['max_mse'] for k in valid_k_values]
     
     # Create figure with subplots
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 10))
+    fig, ax = plt.plot(1, 1, figsize=(14, 10))
     
     # Plot 1: Mean MSE with error bars
-    ax1.errorbar(valid_k_values, mean_mses, yerr=std_mses, fmt='-o', 
+    ax.errorbar(valid_k_values, mean_mses, yerr=std_mses, fmt='-o', 
                  capsize=5, capthick=2, ecolor='red', color='blue', linewidth=2)
-    ax1.set_xlabel('Number of Test Samples (k)')
-    ax1.set_ylabel('Average MSE')
-    ax1.set_title('Average MSE vs. Number of Test Samples')
-    ax1.grid(True, alpha=0.3)
+    ax.set_xlabel('Number of Test Samples (k)')
+    ax.set_ylabel('Average MSE')
+    ax.set_title('Average MSE vs. Number of Test Samples')
+    ax.grid(True, alpha=0.3)
     
     # Plot 2: Min, Mean, Max MSE
-    ax2.fill_between(valid_k_values, min_mses, max_mses, alpha=0.3, color='gray', label='Range')
-    ax2.plot(valid_k_values, mean_mses, 'b-o', label='Mean')
-    ax2.set_xlabel('Number of Test Samples (k)')
-    ax2.set_ylabel('MSE')
-    ax2.set_title('MSE Range vs. Number of Test Samples')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # ax2.fill_between(valid_k_values, min_mses, max_mses, alpha=0.3, color='gray', label='Range')
+    # ax2.plot(valid_k_values, mean_mses, 'b-o', label='Mean')
+    # ax2.set_xlabel('Number of Test Samples (k)')
+    # ax2.set_ylabel('MSE')
+    # ax2.set_title('MSE Range vs. Number of Test Samples')
+    # ax2.legend()
+    # ax2.grid(True, alpha=0.3)
     
-    # Plot 3: Box plot of MSE distributions
-    mse_data = [results_by_k[k]['mses'] for k in valid_k_values]
-    ax3.boxplot(mse_data, positions=valid_k_values, widths=0.6)
-    ax3.set_xlabel('Number of Test Samples (k)')
-    ax3.set_ylabel('MSE')
-    ax3.set_title('MSE Distribution by k')
-    ax3.grid(True, alpha=0.3)
+    # # Plot 3: Box plot of MSE distributions
+    # mse_data = [results_by_k[k]['mses'] for k in valid_k_values]
+    # ax3.boxplot(mse_data, positions=valid_k_values, widths=0.6)
+    # ax3.set_xlabel('Number of Test Samples (k)')
+    # ax3.set_ylabel('MSE')
+    # ax3.set_title('MSE Distribution by k')
+    # ax3.grid(True, alpha=0.3)
     
-    # Plot 4: Standard Deviation
-    ax4.bar(valid_k_values, std_mses, alpha=0.7, color='orange')
-    ax4.set_xlabel('Number of Test Samples (k)')
-    ax4.set_ylabel('Standard Deviation of MSE')
-    ax4.set_title('MSE Variability by k')
-    ax4.grid(True, alpha=0.3)
+    # # Plot 4: Standard Deviation
+    # ax4.bar(valid_k_values, std_mses, alpha=0.7, color='orange')
+    # ax4.set_xlabel('Number of Test Samples (k)')
+    # ax4.set_ylabel('Standard Deviation of MSE')
+    # ax4.set_title('MSE Variability by k')
+    # ax4.grid(True, alpha=0.3)
     
     plt.tight_layout()
     
@@ -516,7 +516,7 @@ def plot_k_out_results(results_by_k, save_path=None):
 
 def plot_leave_one_out_results(results_df):
     """Plot leave-one-color-out analysis results."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6))
     
     # Plot 1: MSE for each color
     colors = results_df['left_out_color'].astype(str)
@@ -539,18 +539,18 @@ def plot_leave_one_out_results(results_df):
                 ha='center', va='bottom', fontweight='bold')
     
     # Plot 2: MSE vs GT RGB values
-    ax2.scatter(results_df['gt_R_mean'], results_df['mse'], 
-                c='red', alpha=0.6, label='R', s=100)
-    ax2.scatter(results_df['gt_G_mean'], results_df['mse'], 
-                c='green', alpha=0.6, label='G', s=100)
-    ax2.scatter(results_df['gt_B_mean'], results_df['mse'], 
-                c='blue', alpha=0.6, label='B', s=100)
+    # ax2.scatter(results_df['gt_R_mean'], results_df['mse'], 
+    #             c='red', alpha=0.6, label='R', s=100)
+    # ax2.scatter(results_df['gt_G_mean'], results_df['mse'], 
+    #             c='green', alpha=0.6, label='G', s=100)
+    # ax2.scatter(results_df['gt_B_mean'], results_df['mse'], 
+    #             c='blue', alpha=0.6, label='B', s=100)
     
-    ax2.set_xlabel('Ground Truth RGB Value')
-    ax2.set_ylabel('MSE')
-    ax2.set_title('MSE vs Ground Truth RGB Values')
-    ax2.legend()
-    ax2.grid(True, alpha=0.3)
+    # ax2.set_xlabel('Ground Truth RGB Value')
+    # ax2.set_ylabel('MSE')
+    # ax2.set_title('MSE vs Ground Truth RGB Values')
+    # ax2.legend()
+    # ax2.grid(True, alpha=0.3)
     
     plt.tight_layout()
     plt.savefig("leave_one_out_analysis.png", dpi=300, bbox_inches='tight')
