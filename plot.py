@@ -470,7 +470,7 @@ def plot_k_out_results(results_by_k, save_path=None):
     max_mses = [results_by_k[k]['max_mse'] for k in valid_k_values]
     
     # Create figure with subplots
-    fig, ax = plt.plot(1, 1, figsize=(14, 10))
+    fig, ax = plt.subplots(figsize=(14, 10))
     
     # Plot 1: Mean MSE with error bars
     ax.errorbar(valid_k_values, mean_mses, yerr=std_mses, fmt='-o', 
@@ -516,7 +516,7 @@ def plot_k_out_results(results_by_k, save_path=None):
 
 def plot_leave_one_out_results(results_df):
     """Plot leave-one-color-out analysis results."""
-    fig, ax1 = plt.subplots(1, 1, figsize=(14, 6))
+    fig, ax1 = plt.subplots(figsize=(14, 6))
     
     # Plot 1: MSE for each color
     colors = results_df['left_out_color'].astype(str)

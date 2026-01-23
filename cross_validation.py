@@ -362,7 +362,7 @@ def run_comprehensive_cross_validation(df_train):
     
     # Define default color categories
     default_test_sets = {
-        'Red-ish': [7, 9, 12, 15],
+        'Red-ish': [7, 9, 12, 15, 16],
         'Green-ish': [4, 6, 11, 14],
         'Blue-ish': [3, 5, 6, 8, 13, 18],
         'Neutral': [19, 20, 21, 22, 23, 24],
@@ -546,7 +546,7 @@ def compare_models_leave_one_out(df_train):
     
     models_to_test = [
         {
-            'name': 'CorrectionByModel (RGB, joint, degree=2)',
+            'name': 'CorrectionByModel (RGB, joint, degree=1)',
             'class': CorrectionByModel,
             'params': {
                 'space': ColorSpace.LAB,
@@ -560,7 +560,7 @@ def compare_models_leave_one_out(df_train):
             }
         },
         # {
-        #     'name': 'CorrectionByModel (LAB, joint, degree=2)',
+        #     'name': 'CorrectionByModel (LAB, joint, degree=1)',
         #     'class': CorrectionByModel,
         #     'params': {
         #         'space': ColorSpace.LAB,
