@@ -12,3 +12,5 @@
 *.fls
 *.blg
 *.bbl
+
+tmp.py
