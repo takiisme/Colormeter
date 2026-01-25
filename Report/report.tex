@@ -57,6 +57,9 @@
 %\usepackage[disable,textsize=tiny]{todonotes}
 \usepackage[textsize=tiny]{todonotes}
 
+\usepackage{enumitem}
+\setlist{noitemsep}
+
 
 % The \icmltitle you define below is probably too long as a header.
 % Therefore, a short form for the running title is supplied here:
@@ -140,15 +143,197 @@ In this study, we want to find out the best approach to correct for ambient ligh
 
 \section{Data and Methods}\label{sec:methods}
 
-TODO.
+We consider a deterministic scaling method and a data-driven model for color correction.
+
+\subsection{Correction by Scaling}
+
+Let $(R_\textup{m}, G_{\textup{m}}, B_\textup{m})$ be the measured RGB values of a color card.
+For the scaling method, we assume that the measured color $(R_\textup{w}, G_{\textup{w}}, B_\textup{w})$ of the white reference is the brightness color one can measure under the ambient light.
+To recover the full RGB space from the measurable color space $[0, R_\textup{w}] \times [0, G_\textup{w}] \times [0, B_\textup{w}]$, we apply a channelwise rescaling.
+The corrected RGB values are given by
+\begin{equation*}
+    \begin{pmatrix}
+        \widehat{R} \\ 
+        \widehat{G} \\
+        \widehat{B}
+    \end{pmatrix} = \begin{pmatrix}
+        \frac{255}{R_\textup{w}} & 0 & 0 \\
+        0 & \frac{255}{G_\textup{w}} & 0 \\
+        0 & 0 & \frac{255}{B_\textup{w}}
+    \end{pmatrix}\begin{pmatrix}
+        R_\textup{m} \\
+        G_\textup{m} \\
+        B_\textup{m}
+    \end{pmatrix}.
+\end{equation*}
+This method was suggested by TODO:REF for colorimetry.
+
+\subsection{Correction by Model}
+
+The second method is to fit a regression model on our measured data.
+For this method, we first need to transform the colors into a meaningful color space.
+The RGB space is not suitable, because the Euclidean distance between RGB triples does not align with the perceived difference between colors.
+In our analysis, we use the CIELAB (or $L^* a^* b^*$) color space, designed by the Commission Internationale de l’Éclairage (CIE)\footnote{
+    In Enligh: International Commission on Illumination.
+    Website: \url{https://cie.co.at/}.
+} for colorimetric applications.
+The $L^*$ coordinate represents lightness, while $a^*$ and $b^*$ control the hue.
+CIELAB was designed to provide approximately perceptual uniformity, with scales comparable to those of color atlases such as the Munsell system, and with coordinate axes corresponding to Hering’s opponent-color theory \cite{oleari2015}.
+This allows the use of Euclidean distance and related metrics, such as the mean squared error (MSE), to fit and analyze the model.
+
+We consider a multi-target linear model defined by
+\begin{equation} \label{eq:model}
+\begin{split}
+    \begin{pmatrix}
+        \widehat{L^*} \\ 
+        \widehat{a^*} \\
+        \widehat{b^*}
+    \end{pmatrix}
+    =& \begin{pmatrix}
+        A_{11} & A_{12} & A_{13} \\
+        A_{21} & A_{22} & A_{23} \\
+        A_{31} & A_{32} & A_{33}
+    \end{pmatrix} \begin{pmatrix}
+        L^*_\textup{m} \\
+        a^*_\textup{m} \\
+        b^*_\textup{m}
+    \end{pmatrix} + \begin{pmatrix}
+        b_1 \\
+        b_2 \\
+        b_3
+    \end{pmatrix} \\
+    &+ \begin{pmatrix}
+        C_{11} & C_{12} & C_{13} \\
+        C_{21} & C_{22} & C_{23} \\
+        C_{31} & C_{32} & C_{33}
+    \end{pmatrix} \begin{pmatrix}
+        L^*_\textup{w} \\
+        a^*_\textup{w} \\
+        b^*_\textup{w}
+    \end{pmatrix} \\
+    &+ \begin{pmatrix}
+        D_{11} & D_{12} \\
+        D_{21} & D_{22} \\
+        D_{31} & D_{32}
+    \end{pmatrix} \begin{pmatrix}
+        \textup{pitch} \\
+        \textup{roll}
+    \end{pmatrix},
+\end{split}
+\end{equation}
+where $(L^*_\textup{m}, a^*_\textup{m}, b^*_\textup{m})$ and $(L^*_\textup{w}, a^*_\textup{w}, b^*_\textup{w})$ are the measured color of a color card and the white reference, respectively, and $A_{ij}, b_i, C_{ij}, D_{ij}$ are parameters.
+The $L^* a^* b^*$ values for color cards and white reference are obtained by a non-linear transformation from the RGB values.
+The transformation is intended for measurements under the standard indoor daylight condition D65, defined by CIE \cite{oleari2015}.
+The lighting condition under which we collected data was an approximation to the D65 condition.
+In \cref{tab:white-comparison} we compare the $L^* a^* b^*$ values of the white color under the D65 condition and the white reference used in our experiment.
+The measured $L^*$ value is much lower than the D65 value, because the white reference in use is not perfectly white.
+We assume the deviations in $a^*$ and $b^*$ from the standard case are sufficiently small and the transformation from RGB to $L^* a^* b^*$ is still valid.
+
+\begin{table}
+\caption{Comparison between the standard white in D65 and the white reference in our measurements (mean $\pm$ standard deviation).}
+\label{tab:white-comparison}
+\centering
+\begin{tabular}{rccc}
+    \toprule
+    & $L^*$ & $a^*$ & $b^*$ \\
+    \midrule
+    \textbf{D65} & $100.000$ & $0.005260$ & $-0.010408$ \\
+    \textbf{our} & $77.21 \pm 3.85$ & $0.30 \pm 0.93$ & $-3.53 \pm 2.07$ \\
+    % \textbf{std} & $3.85248$ & $0.934964$ & $2.06641$ \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
+The pitch and roll in \eqref{eq:model} provide information about the angle from which a picture was taken.
+Our assumption is that the white reference can sufficiently characterize the ambient light, so that the additional information of pitch and roll contributes little to color correction.
+We validate this assumption by comparing the full model \eqref{eq:model} with a reduced model with $D = 0$.
+
+We fit the full and reduced (i.e., $D = 0$) model by minimizing the empirical risk associated with the loss function
+\begin{equation*}
+    \ell(y, \hat{y})
+    = \left( L^* - \widehat{L^*} \right)^2 + \left( a^* - \widehat{a^*} \right)^2 + \left( b^* - \widehat{b^*} \right)^2,
+\end{equation*}
+where $y = (L^*, a^*, b^*)$ denotes the ground truth color and $\hat{y} = (\widehat{L^*}, \widehat{a^*}, \widehat{b^*})$ denotes the correction given by the model.
+For simplicity, we refer to $\ell(y, \hat{y})$, the squared Euclidean distance between $y$ and $\hat{y}$, as the \emph{Euclidean error} of a correction, and the average of Euclidean error across training or test data as the \emph{mean squared error (MSE)}.\todo{
+    Think about what to do with factor 3.
+}
+For the purpose of uncertainty quantification,
+we construct bootstrap confidence intervals \cite{davison1997,efron1994} for the estimated coefficients.
+We resample observations with replacement\footnote{%
+    This corresponds to ``resampling cases'' in \citet{davison1997} and ``bootstrap pairs'' in \citet{efron1994}.
+} and construct a percentile bootstrap confidence interval per parameter.
+
+While our dataset covers only 24 colors, the correction methods ought to generalize to arbitrary colors.
+We simulate the scenario of generalization to unseen colors by employing a $k$-fold cross-validation (CV) strategy.
+For each $k \in \{1,\dots,20\}$, we reserve $k$ colors for testing and use the remaining $24 - k$ colors for training.\footnote{%
+    Since our goal is not to identify model configurations of best generalization performance,
+    but to analyze the model's behavior regarding unseen colors,
+    we use all data in the CV process.
+}
+This CV scheme yields $\sum_{k=1}^{20} \binom{24}{k}$ trials in total.
+As it is infeasible to exhaust all possible configurations, we consider two approaches to selecting the hold-out colors:
+\begin{enumerate}
+    \item We randomly select $k$ colors.
+    \item We manually select groups of colors based on their perceived tone (see \cref{tab:cv-folds}).
+\end{enumerate}
+Furthermore, we perform leave-one-out CV, training the model on all but the $k$-th color for $k = 1,\dots,24$ and testing it on the single color held out.
+
+
+\begin{table}
+\caption{Cross validation specification.}
+\label{tab:cv-folds}
+\centering
+\begin{tabular}{ll}
+    \toprule
+    Test set & Colors \\
+    \midrule
+    Red & 7, 9, 12, 15 \\
+    Green & 4, 6, 11, 14 \\
+    Blue & 3, 5, 6, 8, 13, 18 \\
+    Neutral & 19-24 \\
+    \bottomrule
+\end{tabular}
+\end{table}
+
 
 \section{Results}\label{sec:results}
 
-TODO.
+\begin{itemize}
+    \item Scaling:
+    \begin{itemize}
+        \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
+        \item HSV KDE plots: slightly more quantitative, but still interpretable.
+        \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected (standard lighting condition).
+    \end{itemize}
+    \item HSV KDE plots: interpretable, qualitative checks.
+    \begin{itemize}
+        \item Both scaling and model mostly correct for brightness!
+        \item Hue and saturation correction is minimal, possibly because of the ambient light.
+    \end{itemize}
+    \item Euclidean error (residual) ECDF: holistic view on performance.
+    \begin{itemize}
+        \item Both scaling and model reduces max error significantly.
+        Model reduces more.
+        \item On average, model is only slightly better than scaling.
+        \item White reference helps in model?
+        \item With white reference, additional pose information does not change the error distribution, which supports our assumption that white reference is sufficient.
+    \end{itemize}
+    \item CV.
+\end{itemize}
 
 \section{Discussion \& Conclusion}\label{sec:conclusion}
 
-TODO.
+\begin{itemize}
+    \item Limitations:
+    \begin{itemize}
+        \item Analysis focused on one lighting condition. We could not exactly reproduce D65 due to limited resources.
+        In particular, professional colorimeter as comparison would be meaningful.
+        \item White paper is not (255, 255, 255) -- bias towards underestimating brightness.
+        \item Factors not considered: type of smartphone, distance to object.
+        \item Error in color remains mostly uninterpretable.
+        Only comparison, but no statement about whether one method is ``good enough.''
+    \end{itemize}
+\end{itemize}
 
 \newpage
 
