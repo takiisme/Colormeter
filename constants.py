@@ -1,4 +1,5 @@
 from enum import Enum
+from tueplots.constants.color import rgb
 
 class ColorSpace(Enum):
     RGB = 'rgb'
@@ -20,3 +21,12 @@ class ColorSpace(Enum):
 class LightingCondition(Enum):
     DAYLIGHT = 'daylight'
     DARK = 'dark'
+
+
+COLOR = {
+    'raw': rgb.tue_gray,
+    'color': rgb.tue_gray,
+    'scaling': rgb.tue_red,
+    'reduced': rgb.tue_blue,
+    'full': rgb.tue_gold,
+}

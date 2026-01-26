@@ -31,6 +31,8 @@
 \definecolor{TUorange}{RGB}{210,150,0}
 \definecolor{TUbrown}{RGB}{145,105,70}
 
+\definecolor{c11}{RGB}{73,232,91}
+
 % hyperref makes hyperlinks in the resulting PDF.
 % If your build breaks (sometimes temporarily if a hyperlink spans a page)
 % please comment out the following usepackage line and replace
@@ -135,18 +137,44 @@ TODO.
 
 \section{Introduction}\label{sec:intro}
 
-Measuring color accurately is a common problem in daily life, e.g. when a surface needs to be repainted in the same color. Devices that can carry out this task - so-called \emph{colorimeters} - are available commercially and usually cost several hundred dollars. 
+Measuring color accurately is a common problem in daily life, e.g. when a surface needs to be repainted in the same color. Devices that can carry out this task, the so-called \emph{colorimeters}, are available commercially and usually cost several hundred dollars. 
 
-On the other hand, there are smartphone apps that claim to offer the same service for free by using the built-in camera. A major challenge in this approach is how to deal with the effect of ambient light. \textcolor{lightgray}{Simply picking the color from a photo is not ideal because hue, saturation and brightness depend heavily on the lighting conditions. One way to address this issue is to capture the color of a known object (e.g. a white piece of paper) at the same time and use this to correct for the ambient light.}
+On the other hand, there are smartphone apps that claim to offer the same service for free by using the built-in camera. A major challenge in this approach is how to deal with the effect of ambient light. Simply picking the color from a photo is not ideal because hue, saturation and brightness depend heavily on the lighting conditions. One way to address this issue is to capture the color of a white reference object (e.g., a white piece of paper) at the same time and use this to correct for the ambient light.
 
 In this study, we want to find out the best approach to correct for ambient light and determine how accurate the measurements from such an app can be. In order to do this, we collected a dataset, explored several algorithms for color correction and calculated the accuracy of the measurements with respect to a suitable metric.
 
 \section{Data and Methods}\label{sec:methods}
 
-We consider a deterministic scaling method and a data-driven model for color correction.
+In this section, we discribe the data collection procedure and define two color correction methods which we compare in subsequent analysis.
+
+\subsection{Data Collection}\label{sec:data}
+
+We used a color reference sheet designed for camera calibration as the object from which we collect data.
+The reference sheet consists of 24 color cards and provides accurate ground-truth RGB values for each color.
+We used 4 different phones, Google Pixel 8 Pro, Samsung Galaxy A55, Samsung Galaxy S21 Ultra, Motorola g72 for data collection.
+The data were collected indoors on a desk in front of the window under natural daylight on November 19, 2025 in Tübingen, Germany.
+The procedure is as follows.
+
+We placed a white piece of paper (called \emph{white reference} in the following) with a cut-out square hole over the array of colors to ensure similar conditions for all measurements.
+Only one color card was visible to the camera at any time.
+We took 10 photos for each color and stored the pixel RGB values at the locations of both reticles.\todo{
+    Perhaps a screenshot here can help.
+}
+Additionally, we also stored the mean colors of a $5 \times 5$ and $9 \times 9$ pixel squares at the same locations.\todo{
+    Do we have space left to discuss the reticle size?
+}
+After that, we moved to the next color until we collected data for all 24 colors.
+We wanted to make the procedure of taking the photos as similar as possible for the 24 colors, so all measurements in one run were taken by one person.
+We also tried to take images with a similar distribution of angles and distances over the 24 colors.
+The persons who took the images were told not to vary the yaw angle during dataset collection, since the app only detects pitch and roll.
+% Taking one dataset of $10 \times 24$ images took between 10 and 20 minutes, so the daylight might vary slightly, but not strongly over that time.
+The dataset we use in subsequent analysis consist of 480 measurements taken in two runs.
+
+% lighting conditions: daylight through window, dark room (no lights, window shades closed) and extreme red, green, and blue light provided by a muliticolor LED light bulb. 
 
 \subsection{Correction by Scaling}
 
+We first consider a simple, deterministic correction algorithm.
 Let $(R_\textup{m}, G_{\textup{m}}, B_\textup{m})$ be the measured RGB values of a color card.
 For the scaling method, we assume that the measured color $(R_\textup{w}, G_{\textup{w}}, B_\textup{w})$ of the white reference is the brightness color one can measure under the ambient light.
 To recover the full RGB space from the measurable color space $[0, R_\textup{w}] \times [0, G_\textup{w}] \times [0, B_\textup{w}]$, we apply a channelwise rescaling.
@@ -249,12 +277,12 @@ Our assumption is that the white reference can sufficiently characterize the amb
 We validate this assumption by comparing the full model \eqref{eq:model} with a reduced model with $D = 0$.
 
 We fit the full and reduced model by minimizing the empirical risk associated with the loss function
-\begin{equation*}
+\begin{equation*} %\label{eq:euclidean-error}
     \ell(y, \hat{y})
     = \left( L^* - \widehat{L^*} \right)^2 + \left( a^* - \widehat{a^*} \right)^2 + \left( b^* - \widehat{b^*} \right)^2,
 \end{equation*}
 where $y = (L^*, a^*, b^*)$ denotes the ground truth color and $\hat{y} = (\widehat{L^*}, \widehat{a^*}, \widehat{b^*})$ denotes the correction given by the model.
-For simplicity, we refer to $\ell(y, \hat{y})$, the squared Euclidean distance between $y$ and $\hat{y}$, as the \emph{Euclidean error} of a correction, and the average of Euclidean error across training or test data as the \emph{mean squared error (MSE)}.\todo{
+For simplicity, we refer to $\sqrt{\ell(y, \hat{y})}$, the Euclidean distance between $y$ and $\hat{y}$, as the \emph{Euclidean error} of a correction, and the average of Euclidean error across training or test data as the \emph{mean squared error (MSE)}.\todo{
     Think about what to do with factor 3.
 }
 For the purpose of uncertainty quantification,
@@ -271,16 +299,16 @@ For each $k \in \{1,\dots,20\}$, we reserve $k$ colors for testing and use the r
     we use all data in the CV process.
 }
 This CV scheme yields $\sum_{k=1}^{20} \binom{24}{k}$ trials in total.
-As it is infeasible to exhaust all possible configurations, we consider two approaches to selecting the hold-out colors:
+As it is infeasible to exhaust all possible configurations, we consider two approaches to selecting colors to leave out:
 \begin{enumerate}[nosep]
     \item We randomly select $k$ colors.
     \item We manually select groups of colors based on their perceived tone (see \cref{tab:cv-folds}).
 \end{enumerate}
-Furthermore, we perform leave-one-out CV, training the model on all but the $k$-th color for $k = 1,\dots,24$ and testing it on the single color held out.
+Furthermore, we perform leave-one-out CV, training the model on all but the $k$-th color for $k = 1,\dots,24$ and testing it on the single color left out.
 
 
 \begin{table}
-\caption{Cross validation specification.}
+\caption{Targeted leave-out cross validation specification.}
 \label{tab:cv-folds}
 \centering
 \begin{tabular}{ll}
@@ -300,46 +328,97 @@ Furthermore, we perform leave-one-out CV, training the model on all but the $k$-
 
 \subsection{Scaling vs.\@ Model}
 
-TODO: Error ECDFs for raw vs scaling vs model without pose vs model with pose.
-Interpretation of coefficients.
+\begin{figure}
+    \includegraphics{../Images/plot_error_ecdf.pdf}
+    \caption{Euclidean error ECDFs of the correction methods with $95\%$ Dvoretzky–Kiefer–Wolfowitz confidence band \cite{dvoretzky1956,wasserman2004}.}
+    \label{fig:error-ecdf}
+\end{figure}
+
+We apply scaling correction to the same test set on which we evaluate the full and reduced models.
+\cref{fig:error-ecdf} shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space.
+In comparison to the raw measurements, our proposed correction methods result in an overall reduction of Euclidean error.
+The error ECDFs of the two model variants are almos identical.
+This similarity of error distributions indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
+While the error ECDF of the models lie above that of the scaling method,
+their confidence bands largely overlap.
+However, the maximum error incurred by either model is lower than the scaling method.
+
+In order to gain some insights into how the correction methods reduce the Euclidean error, we visualize the error per channel in \cref{fig:error-kde}.
+As the two model variants yield comparable results, we only display the reduced model.
+One can observe a shift of error distribution in the $L^*$-channel towards zero resulted from the correction methods,
+whereas the error distributions in the other two channels are all centered at approximately zero.
+These observations show that the correction methods are capable of removing bias towards darker colors (which is possibly due to the ambient light), but cannot eliminate uncertainty in hue.
+
+
+\begin{figure*}
+    \includegraphics{../Images/plot_error_kde.pdf}
+    \caption{Kernel density plots for channel-wise difference from ground truth.}
+    \label{fig:error-kde}
+\end{figure*}
+
+% \begin{table}
+% \caption{%
+%     Statistics of Euclidean error in raw measurements and after correction.
+%     Relative change to raw data (first row) are given in parentheses.
+% }
+% \label{tab:error-ecdf-stats}
+% \centering
+% \begin{tabular}{crrrr}
+%     \toprule
+%     Method & Mean & Median & Max \\
+%     \midrule
+%     (Raw) & 20.71 (0\%) & 21.46 (0\%) & 45.67 (0\%) \\
+%     Scaling & 11.63 (-44\%) & 9.71 (-55\%) & 20.87 (-35\%) \\
+%     Full model & 8.08 (-61\%) & 7.19 (-66\%) & 17.70 (-61\%) \\
+%     Reduced model & 8.16 (-61\%) & 7.17 (-67\%) & 17.31 (-62\%) \\
+%     \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \begin{itemize}
+%     \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
+%     \item (HSV or rather LAB) KDE plots: slightly more quantitative, but still interpretable.
+%     \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected by the standard lighting condition.
+% \end{itemize}
+% KDE plots:
+% \begin{itemize}
+%     \item Both scaling and model mostly correct for brightness!
+%     \item Hue correction is minimal, possibly because of the ambient light.
+% \end{itemize}
 
 \subsection{Cross Validation}
 
-Scaling:
-\begin{itemize}
-    \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
-    \item HSV KDE plots: slightly more quantitative, but still interpretable.
-    \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected by the standard lighting condition.
-\end{itemize}
-KDE plots:
-\begin{itemize}
-    \item Both scaling and model mostly correct for brightness!
-    \item Hue correction is minimal, possibly because of the ambient light.
-\end{itemize}
-Euclidean error (residual) ECDF: holistic view on performance.
-\begin{itemize}
-    \item Both scaling and model reduces max error significantly.
-    Model reduces more.
-    \item On average, model is only slightly better than scaling.
-    \item White reference helps in model?
-    \item With white reference, additional pose information does not change the error distribution, which supports our assumption that white reference is sufficient.
-\end{itemize}
+\todo[inline]{Take RMSE instead of MSE?}
 
-TODO:CV
+The results indicate the MSE remains stable across a wide range of training sets sizes.
+A significant inflection point in performance is observed at leaving out $k = 19$ colors from the training set,
+where the MSE increases drastically.
+This behavior suggests that the model maintains high predictive accuracy and robustness even when trained on a small number of colors.
+We therefore believe that our results generalize beyond the 24 colors we collected data from.
+% Consequently, the experimental results are highly reproducible, requiring a minimal threshold of only 5 to 6 training samples to achieve stability.
+
+In the targeted leave-out experiments (see \cref{tab:cv-folds}), we observe that the model trained on all colors but the green ones fail to generalize to the green colors,
+while the model readily generalizes to red or blue colors even if they are left out.
+The results of leave-one-out CV confirm that color 11 (\textcolor{c11}{yellow green}) is the primary driver of failure of generalization.
+Notably, color 11 is both a member of the Greenish group and possesses the largest green ($G$) channel intensity in the dataset.
+
+The significant surge in MSE upon the omission of greenish samples—and Sample 11 in particular—can be attributed to the non-linearities inherent in the sensor’s Green-channel response or the spectral distribution of the target illuminant. In many Bayer-filter-based sensors, the Green channel captures the majority of the luminance information and serves as the primary anchor for the transformation matrix.
+If the training set lacks these high-intensity Green samples, the model fails to capture the curvature of the sensor's response in that region, leading to poor extrapolation. Essentially, the Green samples represent a critical boundary condition; without them, the transformation becomes ill-conditioned for a large portion of the visible gamut.
+\todo[inline]{Citation!}
 
 \section{Discussion \& Conclusion}\label{sec:conclusion}
 
-\begin{itemize}
-    \item Limitations:
-    \begin{itemize}
-        \item Analysis focused on one lighting condition. We could not exactly reproduce D65 due to limited resources.
-        In particular, professional colorimeter as comparison would be meaningful.
-        \item White paper is not (255, 255, 255) -- bias towards underestimating brightness.
-        \item Factors not considered: type of smartphone, distance to object.
-        \item Error in color remains mostly uninterpretable.
-        Only comparison, but no statement about whether one method is ``good enough.''
-    \end{itemize}
-\end{itemize}
+% \begin{itemize}
+%     \item Limitations:
+%     \begin{itemize}
+%         \item Analysis focused on one lighting condition. We could not exactly reproduce D65 due to limited resources.
+%         In particular, professional colorimeter as comparison would be meaningful.
+%         \item White paper is not (255, 255, 255) -- bias towards underestimating brightness.
+%         \item Factors not considered: type of smartphone, distance to object.
+%         \item Error in color remains mostly uninterpretable.
+%         Only comparison, but no statement about whether one method is ``good enough.''
+%     \end{itemize}
+% \end{itemize}
 
 \newpage
 
