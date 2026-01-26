@@ -255,7 +255,7 @@ class CorrectionByModel:
             mse0 = mean_squared_error(self.gt0, c0)
             mse1 = mean_squared_error(self.gt1, c1)
             mse2 = mean_squared_error(self.gt2, c2)
-            mse_loss = (mse0 + mse1 + mse2) / 3
+            mse_loss = (mse0 + mse1 + mse2) #/ 3
             # Boundary penalty for all 3 channels
             if self.space == ColorSpace.RGB:
                 boundary_penalty = (
@@ -363,8 +363,8 @@ class CorrectionByModel:
             optimal_joint_coeffs = minimize(
                 loss_function,
                 x0=x0,
-                method='L-BFGS-B',
-                options={'maxiter': 1000, 'ftol': 1e-8}
+                # method='L-BFGS-B',
+                # options={'maxiter': 1000, 'ftol': 1e-8}
             )
             self.coeffs = optimal_joint_coeffs.x.reshape(-1, 3)
         elif self.method == 'individual':
@@ -382,8 +382,8 @@ class CorrectionByModel:
                 optimal_individual_coeffs = minimize(
                     loss_function,
                     x0=x0,
-                    method='L-BFGS-B',
-                    options={'maxiter': 1000, 'ftol': 1e-8}
+                    # method='L-BFGS-B',
+                    # options={'maxiter': 1000, 'ftol': 1e-8}
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
         if verbose:

@@ -58,7 +58,7 @@
 \usepackage[textsize=tiny]{todonotes}
 
 \usepackage{enumitem}
-\setlist{noitemsep}
+% \setlist{noitemsep}
 
 
 % The \icmltitle you define below is probably too long as a header.
@@ -244,11 +244,11 @@ We assume the deviations in $a^*$ and $b^*$ from the standard case are sufficien
 \end{tabular}
 \end{table}
 
-The pitch and roll in \eqref{eq:model} provide information about the angle from which a picture was taken.
+Pitch and roll in \eqref{eq:model} provide information about the angle from which a picture was taken.
 Our assumption is that the white reference can sufficiently characterize the ambient light, so that the additional information of pitch and roll contributes little to color correction.
 We validate this assumption by comparing the full model \eqref{eq:model} with a reduced model with $D = 0$.
 
-We fit the full and reduced (i.e., $D = 0$) model by minimizing the empirical risk associated with the loss function
+We fit the full and reduced model by minimizing the empirical risk associated with the loss function
 \begin{equation*}
     \ell(y, \hat{y})
     = \left( L^* - \widehat{L^*} \right)^2 + \left( a^* - \widehat{a^*} \right)^2 + \left( b^* - \widehat{b^*} \right)^2,
@@ -272,7 +272,7 @@ For each $k \in \{1,\dots,20\}$, we reserve $k$ colors for testing and use the r
 }
 This CV scheme yields $\sum_{k=1}^{20} \binom{24}{k}$ trials in total.
 As it is infeasible to exhaust all possible configurations, we consider two approaches to selecting the hold-out colors:
-\begin{enumerate}
+\begin{enumerate}[nosep]
     \item We randomly select $k$ colors.
     \item We manually select groups of colors based on their perceived tone (see \cref{tab:cv-folds}).
 \end{enumerate}
@@ -298,28 +298,34 @@ Furthermore, we perform leave-one-out CV, training the model on all but the $k$-
 
 \section{Results}\label{sec:results}
 
+\subsection{Scaling vs.\@ Model}
+
+TODO: Error ECDFs for raw vs scaling vs model without pose vs model with pose.
+Interpretation of coefficients.
+
+\subsection{Cross Validation}
+
+Scaling:
 \begin{itemize}
-    \item Scaling:
-    \begin{itemize}
-        \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
-        \item HSV KDE plots: slightly more quantitative, but still interpretable.
-        \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected (standard lighting condition).
-    \end{itemize}
-    \item HSV KDE plots: interpretable, qualitative checks.
-    \begin{itemize}
-        \item Both scaling and model mostly correct for brightness!
-        \item Hue and saturation correction is minimal, possibly because of the ambient light.
-    \end{itemize}
-    \item Euclidean error (residual) ECDF: holistic view on performance.
-    \begin{itemize}
-        \item Both scaling and model reduces max error significantly.
-        Model reduces more.
-        \item On average, model is only slightly better than scaling.
-        \item White reference helps in model?
-        \item With white reference, additional pose information does not change the error distribution, which supports our assumption that white reference is sufficient.
-    \end{itemize}
-    \item CV.
+    \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
+    \item HSV KDE plots: slightly more quantitative, but still interpretable.
+    \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected by the standard lighting condition.
 \end{itemize}
+KDE plots:
+\begin{itemize}
+    \item Both scaling and model mostly correct for brightness!
+    \item Hue correction is minimal, possibly because of the ambient light.
+\end{itemize}
+Euclidean error (residual) ECDF: holistic view on performance.
+\begin{itemize}
+    \item Both scaling and model reduces max error significantly.
+    Model reduces more.
+    \item On average, model is only slightly better than scaling.
+    \item White reference helps in model?
+    \item With white reference, additional pose information does not change the error distribution, which supports our assumption that white reference is sufficient.
+\end{itemize}
+
+TODO:CV
 
 \section{Discussion \& Conclusion}\label{sec:conclusion}
 

@@ -48,7 +48,7 @@ def plot_comparison_grid(df_final_comparison, radius=4, rows=4, cols=6):
         return
 
     # Change this line:
-    fig, axes = plt.subplots(rows, cols, figsize=(16, rows * 2.5), dpi=80)
+    fig, axes = plt.subplots(rows, cols)
     axes = axes.flatten()
 
     for i, row in df_plot.iterrows():
