@@ -132,4 +132,4 @@ corrector_model = CorrectionByModel(space=ColorSpace.LAB, r=4, degree=1, boundar
 # axs[0].legend()
 # axs[1].legend()
 # fig.savefig("error_ecdf_comparison.png")
-run_comprehensive_cross_validation(df_raw)
+run_leave_one_out_analysis(df_raw)

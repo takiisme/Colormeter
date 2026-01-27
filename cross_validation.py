@@ -532,8 +532,12 @@ def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
     print(f"Colors: {all_sample_numbers}")
     print()
     
-    results = []
-    
+    rgb_measured = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+    lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
+    lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
+
+    detailed_point_logs = []
+
     for left_out_color in all_sample_numbers:
         print(f"Leaving out color {left_out_color}...")
         
@@ -552,52 +556,61 @@ def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
         # Apply correction to test set
         cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
         
-        # Calculate MSE
-        avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
+        # Calculate Euclidean distance (delta E) in LAB space
+        diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
+        distances = np.linalg.norm(diffs, axis=1)
+        accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
+        avg_dist = np.mean(distances)
+
+        # # Calculate MSE
+        # avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
         
         # Get some statistics about this color
-        color_stats = df_train[df_train['sample_number'] == left_out_color].iloc[0]
+        #color_stats = df_train[df_train['sample_number'] == left_out_color].iloc[0]
         
-        results.append({
-            'left_out_color': left_out_color,
-            'mse': avg_mse,
-            'n_train_samples': len(train_samples),
-            'n_test_samples': len(test_samples),
-            'gt_R_mean': color_stats['gt__R'],
-            'gt_G_mean': color_stats['gt__G'],
-            'gt_B_mean': color_stats['gt__B'],
-            'color_r4_R_mean': color_stats[f'color_r4_R'],
-            'color_r4_G_mean': color_stats[f'color_r4_G'],
-            'color_r4_B_mean': color_stats[f'color_r4_B']
-        })
-        
-        print(f"  MSE when leaving out color {left_out_color}: {avg_mse:.4f}")
+        for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
+            detailed_point_logs.append({
+                'left_out_color': left_out_color,
+                'sample_id': row['sample_number'],
+                'R_measured': row['color_r4_R'],
+                'G_measured': row['color_r4_G'],
+                'B_measured': row['color_r4_B'],
+                'L_corrected': row['correction_r4_l'],
+                'a_corrected': row['correction_r4_a'],
+                'b_corrected': row['correction_r4_b'],
+                'L_ground_truth': row['gt__l'],
+                'a_ground_truth': row['gt__a'],
+                'b_ground_truth': row['gt__b'],
+                'delta_E': distances[i],
+                'is_accurate': distances[i] < 2.0
+            })
+    pd.DataFrame(detailed_point_logs).to_csv('loo_detailed_points.csv', index=False)        
     
     # Create results dataframe
-    results_df = pd.DataFrame(results)
+    # results_df = pd.DataFrame()
     
-    # Sort by MSE (highest to lowest)
-    results_df = results_df.sort_values('mse', ascending=False).reset_index(drop=True)
+    # # Sort by MSE (highest to lowest)
+    # results_df = results_df.sort_values('mse', ascending=False).reset_index(drop=True)
     
-    # Add rank
-    results_df['rank'] = range(1, len(results_df) + 1)
+    # # Add rank
+    # results_df['rank'] = range(1, len(results_df) + 1)
     
-    print("\n" + "="*80)
-    print("ANALYSIS RESULTS (Sorted by MSE, highest first)")
-    print("="*80)
-    print(f"{'Rank':<5} {'Color':<8} {'MSE':<12} {'GT RGB':<20} {'Measured RGB':<20}")
-    print("-"*80)
+    # print("\n" + "="*80)
+    # print("ANALYSIS RESULTS (Sorted by MSE, highest first)")
+    # print("="*80)
+    # print(f"{'Rank':<5} {'Color':<8} {'MSE':<12} {'GT RGB':<20} {'Measured RGB':<20}")
+    # print("-"*80)
     
-    for _, row in results_df.iterrows():
-        gt_rgb = f"({row['gt_R_mean']:.0f},{row['gt_G_mean']:.0f},{row['gt_B_mean']:.0f})"
-        meas_rgb = f"({row['color_r4_R_mean']:.0f},{row['color_r4_G_mean']:.0f},{row['color_r4_B_mean']:.0f})"
-        print(f"{row['rank']:<5} {row['left_out_color']:<8} {row['mse']:<12.4f} {gt_rgb:<20} {meas_rgb:<20}")
+    # for _, row in results_df.iterrows():
+    #     gt_rgb = f"({row['gt_R_mean']:.0f},{row['gt_G_mean']:.0f},{row['gt_B_mean']:.0f})"
+    #     meas_rgb = f"({row['color_r4_R_mean']:.0f},{row['color_r4_G_mean']:.0f},{row['color_r4_B_mean']:.0f})"
+    #     print(f"{row['rank']:<5} {row['left_out_color']:<8} {row['mse']:<12.4f} {gt_rgb:<20} {meas_rgb:<20}")
     
-    # Plot the results
-    # plot_leave_one_out_results(results_df)
-    pd.DataFrame.from_dict(results_df).to_csv('loo_cv.csv', index=False)
+    # # Plot the results
+    # # plot_leave_one_out_results(results_df)
+    # pd.DataFrame.from_dict(results_df).to_csv('loo_cv.csv', index=False)
     
-    return results_df
+    # return results_df
 
 
 # Add this function to your existing code and call it like this:
