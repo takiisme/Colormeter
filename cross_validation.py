@@ -7,9 +7,11 @@ from sklearn.metrics import mean_squared_error
 from typing import Dict, List, Any, Optional
 from correction import CorrectionByModel, CorrectionByScaling
 from color_conversion import convert_rgb_cols, convert_to_rgb
-from constants import ColorSpace
+from constants import ColorSpace, LightingCondition
 from plot import plot_k_out_results, plot_targeted_results, plot_leave_one_out_results
+from util import load_data
 
+# TODO: Consider tracking probability of low Delta E error instead of MSE
 
 def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
     """
@@ -50,7 +52,7 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
         k_max = total_samples
     
     # Initialize results storage
-    results_by_k = {}
+    results_by_k = []
     
     for k in range(k_min, k_max + 1):
         print(f"\n{'='*60}")
@@ -87,47 +89,54 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
             
             # Calculate MSE based on color space
-            avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
+            mse = calculate_mse_for_model(model, cv_df_test_corrected)
             
-            print(f"  Average MSE: {avg_mse:.4f}")
+            print(f"  Average MSE: {mse:.4f}")
             
-            iteration_mses.append(avg_mse)
+            iteration_mses.append(mse)
             iteration_results.append({
                 'iteration': iteration + 1,
                 'test_samples': test_samples,
-                'mse': avg_mse,
+                'mse': mse,
                 'n_train': len(cv_df_train),
                 'n_test': len(cv_df_test)
             })
+
+            results_by_k.append({
+                'k': k,
+                'iteration': iteration + 1,
+                'mses': mse
+            })
         
-        # Store results for this k value
-        if iteration_mses:
-            results_by_k[k] = {
-                'mses': iteration_mses,
-                'mean_mse': np.mean(iteration_mses),
-                'std_mse': np.std(iteration_mses),
-                'median_mse': np.median(iteration_mses),
-                'min_mse': np.min(iteration_mses),
-                'max_mse': np.max(iteration_mses),
-                'iterations_completed': len(iteration_mses),
-                'iteration_details': iteration_results
-            }
+        # # Store results for this k value
+        # if iteration_mses:
+        #     results_by_k[k] = {
+        #         'mses': iteration_mses,
+        #         'mean_mse': ,
+        #         'std_mse': np.std(iteration_mses),
+        #         'median_mse': np.median(iteration_mses),
+        #         'min_mse': np.min(iteration_mses),
+        #         'max_mse': np.max(iteration_mses),
+        #         'iterations_completed': len(iteration_mses),
+        #         'iteration_details': iteration_results
+        #     }
             
-            print(f"\n  Summary for k={k}:")
-            print(f"    Mean MSE: {results_by_k[k]['mean_mse']:.4f}")
-            print(f"    Std MSE: {results_by_k[k]['std_mse']:.4f}")
-            print(f"    Min MSE: {results_by_k[k]['min_mse']:.4f}")
-            print(f"    Max MSE: {results_by_k[k]['max_mse']:.4f}")
-            print(f"    Iterations completed: {results_by_k[k]['iterations_completed']}/{iterations_per_k}")
-        else:
-            results_by_k[k] = None
-            print(f"\n  No valid iterations completed for k={k}")
+        #     print(f"\n  Summary for k={k}:")
+        #     print(f"    Mean MSE: {results_by_k[k]['mean_mse']:.4f}")
+        #     print(f"    Std MSE: {results_by_k[k]['std_mse']:.4f}")
+        #     print(f"    Min MSE: {results_by_k[k]['min_mse']:.4f}")
+        #     print(f"    Max MSE: {results_by_k[k]['max_mse']:.4f}")
+        #     print(f"    Iterations completed: {results_by_k[k]['iterations_completed']}/{iterations_per_k}")
+        # else:
+        #     results_by_k[k] = None
+        #     print(f"\n  No valid iterations completed for k={k}")
     
     # Plot overall results
-    plot_k_out_results(results_by_k)
+    # plot_k_out_results(results_by_k)
+    pd.DataFrame(results_by_k).to_csv('cv_k_out.csv')
     
-    # Print final summary
-    print_k_out_summary(results_by_k)
+    # # Print final summary
+    # print_k_out_summary(results_by_k)
     
     return results_by_k
 
@@ -156,7 +165,7 @@ def calculate_mse_for_model(model, df_corrected):
                                   df_corrected[f'{corr_prefix}G'])
         mse_b = mean_squared_error(df_corrected['gt__B'], 
                                   df_corrected[f'{corr_prefix}B'])
-        return (mse_r + mse_g + mse_b) / 3.0
+        return (mse_r + mse_g + mse_b) #/ 3.0
         
     elif model.space.name == 'LAB':
         mse_l = mean_squared_error(df_corrected['gt__l'], 
@@ -165,7 +174,7 @@ def calculate_mse_for_model(model, df_corrected):
                                   df_corrected[f'{corr_prefix}a'])
         mse_b = mean_squared_error(df_corrected['gt__b'], 
                                   df_corrected[f'{corr_prefix}b'])
-        return (mse_l + mse_a + mse_b) / 3.0
+        return (mse_l + mse_a + mse_b) #/ 3.0
     
     return np.nan
 
@@ -508,7 +517,8 @@ def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
         print(f"{row['rank']:<5} {row['left_out_color']:<8} {row['mse']:<12.4f} {gt_rgb:<20} {meas_rgb:<20}")
     
     # Plot the results
-    plot_leave_one_out_results(results_df)
+    # plot_leave_one_out_results(results_df)
+    pd.DataFrame.from_dict(results_df).to_csv('loo_cv.csv', index=False)
     
     return results_df
 
@@ -527,10 +537,10 @@ def run_leave_one_out_analysis(df_train):
         space=ColorSpace.LAB,
         method='joint',
         degree=1,
-        pose=True,
+        pose=False,
         reg_degree=0.0,
         reg_pose=0.0,
-        boundary_penalty_factor=0.0001,
+        boundary_penalty_factor=0.0,
         r=4
     )
     
@@ -549,10 +559,10 @@ def compare_models_leave_one_out(df_train):
                 'space': ColorSpace.LAB,
                 'method': 'joint',
                 'degree': 1,
-                'pose': True,
+                'pose': False,
                 'reg_degree': 0.0,
                 'reg_pose': 0.0,
-                'boundary_penalty_factor': 0.0001,
+                'boundary_penalty_factor': 0.0,
                 'r': 4
             }
         },
@@ -563,10 +573,10 @@ def compare_models_leave_one_out(df_train):
         #         'space': ColorSpace.LAB,
         #         'method': 'joint',
         #         'degree': 1,
-        #         'pose': True,
+        #         'pose': False,
         #         'reg_degree': 0.0,
         #         'reg_pose': 0.0,
-        #         'boundary_penalty_factor': 0.0001,
+        #         'boundary_penalty_factor': 0.0,
         #         'r': 4
         #     }
         # },
@@ -606,3 +616,60 @@ def compare_models_leave_one_out(df_train):
               f"{results['min_mse']:<12.4f} {problematic_str}")
     
     return all_results
+
+
+if __name__ == "__main__":
+    import pickle
+    random.seed(0)
+
+    # Load data
+    df_daylight1 = load_data("Data/Jonas1.json")
+    df_daylight1["lighting_condition"] = LightingCondition.DAYLIGHT.value
+    df_daylight2 = load_data("Data/Baisu1.json")
+    df_daylight2["lighting_condition"] = LightingCondition.DAYLIGHT.value
+    df_raw = pd.concat([df_daylight1, df_daylight2], ignore_index=True)
+    for prefix in ["color_r4_", "gt__"]:
+        df_raw = convert_rgb_cols(df_raw, prefix, to=ColorSpace.LAB)
+
+    # Train-test split
+    df_train = df_raw.sample(frac=0.8, random_state=42)
+    training_indices = df_train.index
+    df_test = df_raw.drop(training_indices)
+
+    # Leave k out
+    # 1. K-Color-Out Cross-Validation
+    print("\n\n1. K-COLOR-OUT CROSS-VALIDATION")
+    print("-"*50)
+    
+    k_out_results = cross_validate_model_k_out(
+        model_class=CorrectionByModel,
+        df_train=df_train,
+        k_min=1,
+        k_max=20,
+        iterations_per_k=20,
+        space=ColorSpace.LAB,
+        method='joint',
+        degree=1,
+        pose=False,
+        reg_degree=0.0,
+        reg_pose=0.0,
+        boundary_penalty_factor=0.0,
+        r=4
+    )
+    pickle.dump(k_out_results, open("k_out_results.pkl", "wb"))
+
+    # Leave one out analysis
+    leave_one_out_results = leave_one_color_out_analysis(
+        df_train=df_train,
+        model_class=CorrectionByModel,
+        space=ColorSpace.LAB,
+        method='joint',
+        degree=1,
+        pose=False,
+        reg_degree=0.0,
+        reg_pose=0.0,
+        boundary_penalty_factor=0.0,
+        r=4
+    )
+    pickle.dump(leave_one_out_results, open("leave_one_out_results.pkl", "wb"))
+
