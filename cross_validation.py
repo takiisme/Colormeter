@@ -10,6 +10,7 @@ from color_conversion import convert_rgb_cols, convert_to_rgb
 from constants import ColorSpace, LightingCondition
 from plot import plot_k_out_results, plot_targeted_results, plot_leave_one_out_results
 from util import load_data
+from tqdm import tqdm
 
 # TODO: Consider tracking probability of low Delta E error instead of MSE
 
@@ -139,6 +140,82 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
     # print_k_out_summary(results_by_k)
     
     return results_by_k
+
+def cross_validate_model_k_out_fix(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
+    unique_sample_numbers = df_train['sample_number'].unique()
+    all_sample_numbers = unique_sample_numbers.tolist()
+    total_samples = len(all_sample_numbers)
+    
+    # Check k_max doesn't exceed available samples
+    if k_max > total_samples: 
+        k_max = total_samples
+    
+    # Initialize results storage
+    rgb_cols = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+    lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
+    lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
+
+    result_by_k = []
+    detailed_logs = []
+
+    total_iterations = (k_max - k_min + 1) * iterations_per_k
+    pbar = tqdm(total=total_iterations, desc="K-Color-Out CV Progress")
+    
+    for k in range(k_min, k_max + 1):
+        pbar.set_description(f"CV (k={k})")
+        for iteration in range(iterations_per_k):    
+            pbar.update(1)        
+            # a. Randomly select k unique sample numbers for testing (without replacement)
+            test_samples = random.sample(all_sample_numbers, k)
+            
+            # b. Remaining samples for training
+            train_samples = [s for s in all_sample_numbers if s not in test_samples]
+            
+            # c. Create train and test dataframes
+            cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
+            cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
+            
+            # Check if we have enough training data
+            if len(cv_df_train) < 5:
+                print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
+                continue
+            
+            # Initialize and train model
+            model = model_class(**model_kwargs)
+            model.train(cv_df_train)
+            
+            # Apply correction to test set
+            cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
+            #print(cv_df_test_corrected.columns)
+            
+            # Calculate Euclidean distance (delta E) in LAB space
+            diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
+            distances = np.linalg.norm(diffs, axis=1)
+            accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
+            
+            for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
+                detailed_logs.append({
+                    'k': k,
+                    'iteration': iteration + 1,
+                    'sample_id': row['sample_number'],
+                    'R_measured': row['color_r2_R'],
+                    'G_measured': row['color_r2_G'],
+                    'B_measured': row['color_r2_B'],
+                    'L_corrected': row['correction_r4_l'],
+                    'a_corrected': row['correction_r4_a'],
+                    'b_corrected': row['correction_r4_b'],
+                    'L_ground_truth': row['gt__l'],
+                    'a_ground_truth': row['gt__a'],
+                    'b_ground_truth': row['gt__b'],
+                    'delta_E': distances[i],
+                    'is_accurate': distances[i] < 2.0
+                })
+            result_by_k.append({'k': k, 'iteration': iteration + 1, 'accuracy': accuracy})
+
+    pbar.close()
+    pd.DataFrame(detailed_logs).to_csv('cv_k_out_detailed.csv', index=False)
+    
+    return result_by_k
 
 
 def calculate_mse_for_model(model, df_corrected):
@@ -349,7 +426,7 @@ def run_comprehensive_cross_validation(df_train):
     print("\n\n1. K-COLOR-OUT CROSS-VALIDATION")
     print("-"*50)
     
-    k_out_results = cross_validate_model_k_out(
+    k_out_results = cross_validate_model_k_out_fix(
         model_class=CorrectionByModel,
         df_train=df_train,
         k_min=1,
@@ -365,65 +442,65 @@ def run_comprehensive_cross_validation(df_train):
         r=4
     )
     
-    # 2. Targeted Cross-Validation with default color categories
-    print("\n\n2. TARGETED CROSS-VALIDATION")
-    print("-"*50)
+    # # 2. Targeted Cross-Validation with default color categories
+    # print("\n\n2. TARGETED CROSS-VALIDATION")
+    # print("-"*50)
     
-    # Define default color categories
-    default_test_sets = {
-        'Blue-ish': [3, 6, 8, 13, 18],
-        'Green-ish': [4, 6, 11, 14],
-        'Neutral': [19, 20, 21, 22, 23, 24],
-        'Red-ish': [7, 9, 12, 15]
-    }
+    # # Define default color categories
+    # default_test_sets = {
+    #     'Blue-ish': [3, 6, 8, 13, 18],
+    #     'Green-ish': [4, 6, 11, 14],
+    #     'Neutral': [19, 20, 21, 22, 23, 24],
+    #     'Red-ish': [7, 9, 12, 15]
+    # }
     
-    targeted_results = targeted_cross_validation(
-        model_class=CorrectionByModel,
-        df_train=df_train,
-        test_sets_dict=default_test_sets,
-        space=ColorSpace.LAB,
-        method='joint',
-        degree=1,
-        pose=True,
-        reg_degree=0.0,
-        reg_pose=0.0,
-        boundary_penalty_factor=0.0001,
-        r=4
-    )
+    # targeted_results = targeted_cross_validation(
+    #     model_class=CorrectionByModel,
+    #     df_train=df_train,
+    #     test_sets_dict=default_test_sets,
+    #     space=ColorSpace.LAB,
+    #     method='joint',
+    #     degree=1,
+    #     pose=True,
+    #     reg_degree=0.0,
+    #     reg_pose=0.0,
+    #     boundary_penalty_factor=0.0001,
+    #     r=4
+    # )
     
-    # 3. Optional: Extreme RGB targeted validation
-    print("\n\n3. EXTREME RGB TARGETED VALIDATION")
-    print("-"*50)
+    # # 3. Optional: Extreme RGB targeted validation
+    # print("\n\n3. EXTREME RGB TARGETED VALIDATION")
+    # print("-"*50)
     
-    # Find extreme RGB samples
-    max_r_samples = df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist()
-    max_g_samples = df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist()
-    max_b_samples = df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
+    # # Find extreme RGB samples
+    # max_r_samples = df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist()
+    # max_g_samples = df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist()
+    # max_b_samples = df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
     
-    extreme_test_sets = {
-        'Top_5_R': max_r_samples,
-        'Top_5_G': max_g_samples,
-        'Top_5_B': max_b_samples
-    }
+    # extreme_test_sets = {
+    #     'Top_5_R': max_r_samples,
+    #     'Top_5_G': max_g_samples,
+    #     'Top_5_B': max_b_samples
+    # }
     
-    extreme_results = targeted_cross_validation(
-        model_class=CorrectionByModel,
-        df_train=df_train,
-        test_sets_dict=extreme_test_sets,
-        space=ColorSpace.LAB,
-        method='joint',
-        degree=1,
-        pose=True,
-        reg_degree=0.0,
-        reg_pose=0.0,
-        boundary_penalty_factor=0.0001,
-        r=4
-    )
+    # extreme_results = targeted_cross_validation(
+    #     model_class=CorrectionByModel,
+    #     df_train=df_train,
+    #     test_sets_dict=extreme_test_sets,
+    #     space=ColorSpace.LAB,
+    #     method='joint',
+    #     degree=1,
+    #     pose=True,
+    #     reg_degree=0.0,
+    #     reg_pose=0.0,
+    #     boundary_penalty_factor=0.0001,
+    #     r=4
+    # )
     
     return {
-        #'k_out_results': k_out_results,
-        'targeted_results': targeted_results,
-        'extreme_results': extreme_results
+        'k_out_results': k_out_results,
+        #'targeted_results': targeted_results,
+        #'extreme_results': extreme_results
     }
 
 
