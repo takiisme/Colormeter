@@ -87,7 +87,7 @@
 \begin{icmlauthorlist}
 % Alphabetic order, equal contribution anyway.
 \icmlauthor{Zhi Jing}{equal}
-\icmlauthor{Enrico Quinto}{equal}
+\icmlauthor{Enrico Vesentini}{equal}
 \icmlauthor{T\`ai Th\'ai}{equal}
 \icmlauthor{Jonas Thumbs}{equal}
 \icmlauthor{Baisu Zhou}{equal}
@@ -131,7 +131,7 @@
 \printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
 
 \begin{abstract}
-While colorimetry devices can accurately measure colors of objects, they are too expensive for daily usage such as detecting color of scratched surfaces for repainting.
+While colorimetry devices can accurately measure colors of objects, they are too expensive for daily usage such as detecting color of a scratched surface for repainting.
 Color picking from images captured by a smartphone is subject to distortion due to ambient light.
 We statistically analyze a deterministic and a data-driven color correction method which improve the accuracy of color detection using smartphone images,
 showing that simple, post-hoc correction can greatly improve the quality of color measurements done by smartphones.
@@ -141,8 +141,10 @@ TODO: CV results?
 \section{Introduction}\label{sec:intro}
 
 Measuring color accurately is a common problem in daily life, e.g., when a surface needs to be repainted in the same color. Devices that can carry out this task, the so-called \emph{colorimeters}, are available commercially and usually cost several hundred dollars. 
-
-On the other hand, there are smartphone apps that claim to offer the same service for free by using the built-in camera. A major challenge in this approach is how to deal with the effect of ambient light. Simply picking the color from a photo is not ideal because hue, saturation and brightness depend heavily on the lighting conditions. One way to address this issue is to capture the color of a white reference object (e.g., a white piece of paper) at the same time and use this to correct for the ambient light.
+There are smartphone apps that claim to offer the same service for free by using the built-in camera.
+A challenge in this approach is how to deal with the effect of ambient light.
+Simply picking the color from a photo is not ideal because hue, saturation, and brightness depend heavily on the lighting conditions.
+One way to address this issue is to capture the color of a white reference object (e.g., a white piece of paper) at the same time and use this to correct for the ambient light.
 
 In this study, we want to find a sufficiently accurate approach to correct for ambient light and analyze the usability of measurements from such an app for color detection.
 While smartphone cameras store colors in RGB format, the RGB color space is not suitable for our analysis,
