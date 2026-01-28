@@ -7,65 +7,243 @@ from sklearn.metrics import mean_squared_error
 from typing import Dict, List, Any, Optional
 from correction import CorrectionByModel, CorrectionByScaling
 from color_conversion import convert_rgb_cols, convert_to_rgb
-from constants import ColorSpace
+from constants import ColorSpace, LightingCondition
 from plot import plot_k_out_results, plot_targeted_results, plot_leave_one_out_results
+from util import load_data
+from tqdm import tqdm
 
+# TODO: Consider tracking probability of low Delta E error instead of MSE
+
+# def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
+#     """
+#     Perform k-color-out cross-validation as specified.
+    
+#     For each k from k_min to k_max, run iterations_per_k iterations.
+#     For each iteration, leave k random samples out for testing.
+    
+#     Parameters
+#     ----------
+#     model_class : class
+#         The model class (CorrectionByModel)
+#     df_train : pd.DataFrame
+#         Training dataframe with measurements
+#     k_min : int
+#         Minimum k value (default: 1)
+#     k_max : int
+#         Maximum k value (default: 20)
+#     iterations_per_k : int
+#         Number of iterations to run for each k value
+#     **model_kwargs : dict
+#         Keyword arguments for initializing the model
+        
+#     Returns
+#     -------
+#     dict : Dictionary with CV results by k value
+#     """
+#     unique_sample_numbers = df_train['sample_number'].unique()
+#     print(f"Unique sample numbers: {unique_sample_numbers}")
+#     print(f"Number of unique sample numbers: {len(unique_sample_numbers)}")
+    
+#     all_sample_numbers = unique_sample_numbers.tolist()
+#     total_samples = len(all_sample_numbers)
+    
+#     # Check k_max doesn't exceed available samples
+#     if k_max > total_samples:
+#         print(f"Warning: k_max ({k_max}) exceeds total samples ({total_samples}). Reducing k_max to {total_samples}.")
+#         k_max = total_samples
+    
+#     # Initialize results storage
+#     results_by_k = []
+    
+#     for k in range(k_min, k_max + 1):
+#         print(f"\n{'='*60}")
+#         print(f"Running k-Color-Out Cross-Validation for k = {k}")
+#         print(f"{'='*60}")
+        
+#         iteration_mses = []
+#         iteration_results = []
+        
+#         for iteration in range(iterations_per_k):
+#             print(f"\n  Iteration {iteration + 1}/{iterations_per_k}")
+            
+#             # a. Randomly select k unique sample numbers for testing (without replacement)
+#             test_samples = random.sample(all_sample_numbers, k)
+#             print(f"  Test samples: {sorted(test_samples)}")
+            
+#             # b. Remaining samples for training
+#             train_samples = [s for s in all_sample_numbers if s not in test_samples]
+            
+#             # c. Create train and test dataframes
+#             cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
+#             cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
+            
+#             # Check if we have enough training data
+#             if len(cv_df_train) < 10:
+#                 print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
+#                 continue
+            
+#             # Initialize and train model
+#             model = model_class(**model_kwargs)
+#             model.train(cv_df_train)
+            
+#             # Apply correction to test set
+#             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
+            
+#             # Calculate MSE based on color space
+#             mse = calculate_mse_for_model(model, cv_df_test_corrected)
+            
+#             print(f"  Average MSE: {mse:.4f}")
+            
+#             iteration_mses.append(mse)
+#             iteration_results.append({
+#                 'iteration': iteration + 1,
+#                 'test_samples': test_samples,
+#                 'mse': mse,
+#                 'n_train': len(cv_df_train),
+#                 'n_test': len(cv_df_test)
+#             })
+
+#             results_by_k.append({
+#                 'k': k,
+#                 'iteration': iteration + 1,
+#                 'mses': mse
+#             })
+        
+#         # # Store results for this k value
+#         # if iteration_mses:
+#         #     results_by_k[k] = {
+#         #         'mses': iteration_mses,
+#         #         'mean_mse': ,
+#         #         'std_mse': np.std(iteration_mses),
+#         #         'median_mse': np.median(iteration_mses),
+#         #         'min_mse': np.min(iteration_mses),
+#         #         'max_mse': np.max(iteration_mses),
+#         #         'iterations_completed': len(iteration_mses),
+#         #         'iteration_details': iteration_results
+#         #     }
+            
+#         #     print(f"\n  Summary for k={k}:")
+#         #     print(f"    Mean MSE: {results_by_k[k]['mean_mse']:.4f}")
+#         #     print(f"    Std MSE: {results_by_k[k]['std_mse']:.4f}")
+#         #     print(f"    Min MSE: {results_by_k[k]['min_mse']:.4f}")
+#         #     print(f"    Max MSE: {results_by_k[k]['max_mse']:.4f}")
+#         #     print(f"    Iterations completed: {results_by_k[k]['iterations_completed']}/{iterations_per_k}")
+#         # else:
+#         #     results_by_k[k] = None
+#         #     print(f"\n  No valid iterations completed for k={k}")
+    
+#     # Plot overall results
+#     plot_k_out_results(results_by_k)
+#     pd.DataFrame(results_by_k).to_csv('cv_k_out.csv')
+    
+#     # # Print final summary
+#     # print_k_out_summary(results_by_k)
+    
+#     return results_by_k
+
+# def cross_validate_model_k_out_fix(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
+#     unique_sample_numbers = df_train['sample_number'].unique()
+#     all_sample_numbers = unique_sample_numbers.tolist()
+#     total_samples = len(all_sample_numbers)
+    
+#     # Check k_max doesn't exceed available samples
+#     if k_max > total_samples: 
+#         k_max = total_samples
+    
+#     # Initialize results storage
+#     rgb_cols = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+#     lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
+#     lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
+
+#     result_by_k = []
+#     detailed_logs = []
+
+#     total_iterations = (k_max - k_min + 1) * iterations_per_k
+#     pbar = tqdm(total=total_iterations, desc="K-Color-Out CV Progress")
+    
+#     for k in range(k_min, k_max + 1):
+#         pbar.set_description(f"CV (k={k})")
+#         for iteration in range(iterations_per_k):    
+#             pbar.update(1)        
+#             # a. Randomly select k unique sample numbers for testing (without replacement)
+#             test_samples = random.sample(all_sample_numbers, k)
+            
+#             # b. Remaining samples for training
+#             train_samples = [s for s in all_sample_numbers if s not in test_samples]
+            
+#             # c. Create train and test dataframes
+#             cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
+#             cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
+            
+#             # Check if we have enough training data
+#             if len(cv_df_train) < 5:
+#                 print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
+#                 continue
+            
+#             # Initialize and train model
+#             model = model_class(**model_kwargs)
+#             model.train(cv_df_train)
+            
+#             # Apply correction to test set
+#             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
+#             #print(cv_df_test_corrected.columns)
+            
+#             # Calculate Euclidean distance (delta E) in LAB space
+#             diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
+#             distances = np.linalg.norm(diffs, axis=1)
+#             accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
+            
+#             for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
+#                 detailed_logs.append({
+#                     'k': k,
+#                     'iteration': iteration + 1,
+#                     'sample_id': row['sample_number'],
+#                     'R_measured': row['color_r2_R'],
+#                     'G_measured': row['color_r2_G'],
+#                     'B_measured': row['color_r2_B'],
+#                     'L_corrected': row['correction_r4_l'],
+#                     'a_corrected': row['correction_r4_a'],
+#                     'b_corrected': row['correction_r4_b'],
+#                     'L_ground_truth': row['gt__l'],
+#                     'a_ground_truth': row['gt__a'],
+#                     'b_ground_truth': row['gt__b'],
+#                     'delta_E': distances[i],
+#                     'is_accurate': distances[i] < 2.0
+#                 })
+#             result_by_k.append({'k': k, 'iteration': iteration + 1, 'accuracy': accuracy})
+
+#     pbar.close()
+#     pd.DataFrame(detailed_logs).to_csv('cv_k_out_detailed.csv', index=False)
+    
+#     return result_by_k
 
 def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
-    """
-    Perform k-color-out cross-validation as specified.
-    
-    For each k from k_min to k_max, run iterations_per_k iterations.
-    For each iteration, leave k random samples out for testing.
-    
-    Parameters
-    ----------
-    model_class : class
-        The model class (CorrectionByModel)
-    df_train : pd.DataFrame
-        Training dataframe with measurements
-    k_min : int
-        Minimum k value (default: 1)
-    k_max : int
-        Maximum k value (default: 20)
-    iterations_per_k : int
-        Number of iterations to run for each k value
-    **model_kwargs : dict
-        Keyword arguments for initializing the model
-        
-    Returns
-    -------
-    dict : Dictionary with CV results by k value
-    """
     unique_sample_numbers = df_train['sample_number'].unique()
-    print(f"Unique sample numbers: {unique_sample_numbers}")
-    print(f"Number of unique sample numbers: {len(unique_sample_numbers)}")
-    
     all_sample_numbers = unique_sample_numbers.tolist()
     total_samples = len(all_sample_numbers)
     
     # Check k_max doesn't exceed available samples
-    if k_max > total_samples:
-        print(f"Warning: k_max ({k_max}) exceeds total samples ({total_samples}). Reducing k_max to {total_samples}.")
+    if k_max > total_samples: 
         k_max = total_samples
     
     # Initialize results storage
-    results_by_k = {}
+    rgb_cols = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+    lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
+    lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
+
+    detailed_logs = []
+    # This list stores the accuracy/mse per iteration to build the plotter dict later
+    iteration_stats = [] 
+
+    total_iterations = (k_max - k_min + 1) * iterations_per_k
+    pbar = tqdm(total=total_iterations, desc="K-Color-Out CV Progress")
     
     for k in range(k_min, k_max + 1):
-        print(f"\n{'='*60}")
-        print(f"Running k-Color-Out Cross-Validation for k = {k}")
-        print(f"{'='*60}")
-        
-        iteration_mses = []
-        iteration_results = []
-        
-        for iteration in range(iterations_per_k):
-            print(f"\n  Iteration {iteration + 1}/{iterations_per_k}")
-            
+        pbar.set_description(f"CV (k={k})")
+        for iteration in range(iterations_per_k):    
+            pbar.update(1)        
             # a. Randomly select k unique sample numbers for testing (without replacement)
             test_samples = random.sample(all_sample_numbers, k)
-            print(f"  Test samples: {sorted(test_samples)}")
             
             # b. Remaining samples for training
             train_samples = [s for s in all_sample_numbers if s not in test_samples]
@@ -75,7 +253,7 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
             cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
             
             # Check if we have enough training data
-            if len(cv_df_train) < 10:
+            if len(cv_df_train) < 5:
                 print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
                 continue
             
@@ -86,51 +264,63 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
             # Apply correction to test set
             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
             
-            # Calculate MSE based on color space
-            avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
+            # Calculate Euclidean distance (delta E) in LAB space
+            diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
+            distances = np.linalg.norm(diffs, axis=1)
             
-            print(f"  Average MSE: {avg_mse:.4f}")
+            # Calculate metrics for this iteration
+            accuracy = np.mean(distances < 2.0)
+            mse = np.mean(distances**2)
             
-            iteration_mses.append(avg_mse)
-            iteration_results.append({
-                'iteration': iteration + 1,
-                'test_samples': test_samples,
-                'mse': avg_mse,
-                'n_train': len(cv_df_train),
-                'n_test': len(cv_df_test)
-            })
-        
-        # Store results for this k value
-        if iteration_mses:
+            for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
+                detailed_logs.append({
+                    'k': k,
+                    'iteration': iteration + 1,
+                    'sample_id': row['sample_number'],
+                    'R_measured': row['color_r2_R'], 
+                    'G_measured': row['color_r2_G'],
+                    'B_measured': row['color_r2_B'],
+                    'L_corrected': row['correction_r4_l'],
+                    'a_corrected': row['correction_r4_a'],
+                    'b_corrected': row['correction_r4_b'],
+                    'L_ground_truth': row['gt__l'],
+                    'a_ground_truth': row['gt__a'],
+                    'b_ground_truth': row['gt__b'],
+                    'delta_E': distances[i],
+                    'is_accurate': distances[i] < 2.0
+                })
+            
+            iteration_stats.append({'k': k, 'mse': mse, 'accuracy': accuracy})
+
+    pbar.close()
+    
+    # Save detailed logs
+    df_detailed = pd.DataFrame(detailed_logs)
+    df_detailed.to_csv('cv_k_out_detailed.csv', index=False)
+    
+    # --- TRANSFORM TO PLOTTER DICTIONARY FORMAT ---
+    # This rebuilds the dictionary your plotting function requires
+    results_by_k = {}
+    stats_df = pd.DataFrame(iteration_stats)
+    
+    for k in range(k_min, k_max + 1):
+        k_subset = stats_df[stats_df['k'] == k]
+        if not k_subset.empty:
             results_by_k[k] = {
-                'mses': iteration_mses,
-                'mean_mse': np.mean(iteration_mses),
-                'std_mse': np.std(iteration_mses),
-                'median_mse': np.median(iteration_mses),
-                'min_mse': np.min(iteration_mses),
-                'max_mse': np.max(iteration_mses),
-                'iterations_completed': len(iteration_mses),
-                'iteration_details': iteration_results
+                'mean_mse': k_subset['mse'].mean(),
+                'std_mse': k_subset['mse'].std() if len(k_subset) > 1 else 0,
+                'min_mse': k_subset['mse'].min(),
+                'max_mse': k_subset['mse'].max(),
+                'mses': k_subset['mse'].tolist(),
+                'mean_accuracy': k_subset['accuracy'].mean()
             }
-            
-            print(f"\n  Summary for k={k}:")
-            print(f"    Mean MSE: {results_by_k[k]['mean_mse']:.4f}")
-            print(f"    Std MSE: {results_by_k[k]['std_mse']:.4f}")
-            print(f"    Min MSE: {results_by_k[k]['min_mse']:.4f}")
-            print(f"    Max MSE: {results_by_k[k]['max_mse']:.4f}")
-            print(f"    Iterations completed: {results_by_k[k]['iterations_completed']}/{iterations_per_k}")
         else:
             results_by_k[k] = None
-            print(f"\n  No valid iterations completed for k={k}")
-    
-    # Plot overall results
-    plot_k_out_results(results_by_k)
-    
-    # Print final summary
-    print_k_out_summary(results_by_k)
+
+    # Save image instead of showing
+    plot_k_out_results(results_by_k, save_path="k_out_analysis.png")
     
     return results_by_k
-
 
 def calculate_mse_for_model(model, df_corrected):
     """
@@ -156,7 +346,7 @@ def calculate_mse_for_model(model, df_corrected):
                                   df_corrected[f'{corr_prefix}G'])
         mse_b = mean_squared_error(df_corrected['gt__B'], 
                                   df_corrected[f'{corr_prefix}B'])
-        return (mse_r + mse_g + mse_b) / 3.0
+        return (mse_r + mse_g + mse_b) #/ 3.0
         
     elif model.space.name == 'LAB':
         mse_l = mean_squared_error(df_corrected['gt__l'], 
@@ -165,7 +355,7 @@ def calculate_mse_for_model(model, df_corrected):
                                   df_corrected[f'{corr_prefix}a'])
         mse_b = mean_squared_error(df_corrected['gt__b'], 
                                   df_corrected[f'{corr_prefix}b'])
-        return (mse_l + mse_a + mse_b) / 3.0
+        return (mse_l + mse_a + mse_b) #/ 3.0
     
     return np.nan
 
@@ -294,7 +484,7 @@ def targeted_cross_validation(model_class, df_train, test_sets_dict, **model_kwa
         }
     
     # Plot results
-    plot_targeted_results(targeted_results)
+    plot_targeted_results(targeted_results, save_path="targeted_cv_analysis.png")
     
     # Print summary
     print_targeted_summary(targeted_results)
@@ -339,7 +529,7 @@ def run_comprehensive_cross_validation(df_train):
     # 1. K-Color-Out Cross-Validation
     print("\n\n1. K-COLOR-OUT CROSS-VALIDATION")
     print("-"*50)
-    
+
     k_out_results = cross_validate_model_k_out(
         model_class=CorrectionByModel,
         df_train=df_train,
@@ -356,6 +546,23 @@ def run_comprehensive_cross_validation(df_train):
         r=4
     )
     
+    # k_out_results = cross_validate_model_k_out_fix(
+    #     model_class=CorrectionByModel,
+    #     df_train=df_train,
+    #     k_min=1,
+    #     k_max=20,
+    #     iterations_per_k=20,
+    #     space=ColorSpace.LAB,
+    #     method='joint',
+    #     degree=1,
+    #     pose=True,
+    #     reg_degree=0.0,
+    #     reg_pose=0.0,
+    #     boundary_penalty_factor=0.0001,
+    #     r=4
+    # )
+    
+    # 2. Targeted Cross-Validation with default color categories
     # 2. Targeted Cross-Validation with default color categories
     print("\n\n2. TARGETED CROSS-VALIDATION")
     print("-"*50)
@@ -385,7 +592,7 @@ def run_comprehensive_cross_validation(df_train):
         r=4
     )
     
-    # # 3. Optional: Extreme RGB targeted validation
+    # 3. Optional: Extreme RGB targeted validation
     # print("\n\n3. EXTREME RGB TARGETED VALIDATION")
     # print("-"*50)
     
@@ -419,7 +626,6 @@ def run_comprehensive_cross_validation(df_train):
         'targeted_results': targeted_results,
         #'extreme_results': extreme_results
     }
-
 
 def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
     """
@@ -515,6 +721,114 @@ def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
     
     return results_df
 
+def leave_one_color_out_analysis_fix(df_train, model_class, **model_kwargs):
+    """
+    Perform leave-one-color-out analysis to see which colors cause the biggest loss surge.
+    
+    Parameters
+    ----------
+    df_train : pd.DataFrame
+        Training dataframe
+    model_class : class
+        Model class (CorrectionByModel or CorrectionByScaling)
+    **model_kwargs : dict
+        Model parameters
+        
+    Returns
+    -------
+    pd.DataFrame : Results for each left-out color
+    """
+    print("="*80)
+    print("LEAVE-ONE-COLOR-OUT ANALYSIS")
+    print("="*80)
+    
+    unique_sample_numbers = df_train['sample_number'].unique()
+    all_sample_numbers = sorted(unique_sample_numbers.tolist())
+    
+    print(f"Total colors: {len(all_sample_numbers)}")
+    print(f"Colors: {all_sample_numbers}")
+    print()
+    
+    rgb_measured = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+    lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
+    lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
+
+    detailed_point_logs = []
+
+    for left_out_color in all_sample_numbers:
+        print(f"Leaving out color {left_out_color}...")
+        
+        # Training data: all colors except left_out_color
+        train_samples = [s for s in all_sample_numbers if s != left_out_color]
+        test_samples = [left_out_color]
+        
+        # Split data
+        cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
+        cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
+        
+        # Initialize and train model
+        model = model_class(**model_kwargs)
+        model.train(cv_df_train)
+        
+        # Apply correction to test set
+        cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
+        
+        # Calculate Euclidean distance (delta E) in LAB space
+        diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
+        distances = np.linalg.norm(diffs, axis=1)
+        accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
+        avg_dist = np.mean(distances)
+
+        # # Calculate MSE
+        # avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
+        
+        # Get some statistics about this color
+        #color_stats = df_train[df_train['sample_number'] == left_out_color].iloc[0]
+        
+        for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
+            detailed_point_logs.append({
+                'left_out_color': left_out_color,
+                'sample_id': row['sample_number'],
+                'R_measured': row['color_r4_R'],
+                'G_measured': row['color_r4_G'],
+                'B_measured': row['color_r4_B'],
+                'L_corrected': row['correction_r4_l'],
+                'a_corrected': row['correction_r4_a'],
+                'b_corrected': row['correction_r4_b'],
+                'L_ground_truth': row['gt__l'],
+                'a_ground_truth': row['gt__a'],
+                'b_ground_truth': row['gt__b'],
+                'delta_E': distances[i],
+                'is_accurate': distances[i] < 2.0
+            })
+    pd.DataFrame(detailed_point_logs).to_csv('loo_detailed_points.csv', index=False)        
+    
+    # Create results dataframe
+    # results_df = pd.DataFrame()
+    
+    # # Sort by MSE (highest to lowest)
+    # results_df = results_df.sort_values('mse', ascending=False).reset_index(drop=True)
+    
+    # # Add rank
+    # results_df['rank'] = range(1, len(results_df) + 1)
+    
+    # print("\n" + "="*80)
+    # print("ANALYSIS RESULTS (Sorted by MSE, highest first)")
+    # print("="*80)
+    # print(f"{'Rank':<5} {'Color':<8} {'MSE':<12} {'GT RGB':<20} {'Measured RGB':<20}")
+    # print("-"*80)
+    
+    # for _, row in results_df.iterrows():
+    #     gt_rgb = f"({row['gt_R_mean']:.0f},{row['gt_G_mean']:.0f},{row['gt_B_mean']:.0f})"
+    #     meas_rgb = f"({row['color_r4_R_mean']:.0f},{row['color_r4_G_mean']:.0f},{row['color_r4_B_mean']:.0f})"
+    #     print(f"{row['rank']:<5} {row['left_out_color']:<8} {row['mse']:<12.4f} {gt_rgb:<20} {meas_rgb:<20}")
+    
+    # # Plot the results
+    # # plot_leave_one_out_results(results_df)
+    # pd.DataFrame.from_dict(results_df).to_csv('loo_cv.csv', index=False)
+    
+    # return results_df
+
 
 # Add this function to your existing code and call it like this:
 
@@ -530,10 +844,10 @@ def run_leave_one_out_analysis(df_train):
         space=ColorSpace.LAB,
         method='joint',
         degree=1,
-        pose=True,
+        pose=False,
         reg_degree=0.0,
         reg_pose=0.0,
-        boundary_penalty_factor=0.0001,
+        boundary_penalty_factor=0.0,
         r=4
     )
     
@@ -546,30 +860,30 @@ def compare_models_leave_one_out(df_train):
     
     models_to_test = [
         {
-            'name': 'CorrectionByModel (RGB, joint, degree=1)',
+            'name': 'CorrectionByModel (RGB, joint, degree=2)',
             'class': CorrectionByModel,
             'params': {
                 'space': ColorSpace.LAB,
                 'method': 'joint',
                 'degree': 1,
-                'pose': True,
+                'pose': False,
                 'reg_degree': 0.0,
                 'reg_pose': 0.0,
-                'boundary_penalty_factor': 0.0001,
+                'boundary_penalty_factor': 0.0,
                 'r': 4
             }
         },
         # {
-        #     'name': 'CorrectionByModel (LAB, joint, degree=1)',
+        #     'name': 'CorrectionByModel (LAB, joint, degree=2)',
         #     'class': CorrectionByModel,
         #     'params': {
         #         'space': ColorSpace.LAB,
         #         'method': 'joint',
         #         'degree': 1,
-        #         'pose': True,
+        #         'pose': False,
         #         'reg_degree': 0.0,
         #         'reg_pose': 0.0,
-        #         'boundary_penalty_factor': 0.0001,
+        #         'boundary_penalty_factor': 0.0,
         #         'r': 4
         #     }
         # },
@@ -609,3 +923,60 @@ def compare_models_leave_one_out(df_train):
               f"{results['min_mse']:<12.4f} {problematic_str}")
     
     return all_results
+
+
+if __name__ == "__main__":
+    import pickle
+    random.seed(0)
+
+    # Load data
+    df_daylight1 = load_data("Data/Jonas1.json")
+    df_daylight1["lighting_condition"] = LightingCondition.DAYLIGHT.value
+    df_daylight2 = load_data("Data/Baisu1.json")
+    df_daylight2["lighting_condition"] = LightingCondition.DAYLIGHT.value
+    df_raw = pd.concat([df_daylight1, df_daylight2], ignore_index=True)
+    for prefix in ["color_r4_", "gt__"]:
+        df_raw = convert_rgb_cols(df_raw, prefix, to=ColorSpace.LAB)
+
+    # Train-test split
+    df_train = df_raw.sample(frac=0.8, random_state=42)
+    training_indices = df_train.index
+    df_test = df_raw.drop(training_indices)
+
+    # Leave k out
+    # 1. K-Color-Out Cross-Validation
+    print("\n\n1. K-COLOR-OUT CROSS-VALIDATION")
+    print("-"*50)
+    
+    k_out_results = cross_validate_model_k_out(
+        model_class=CorrectionByModel,
+        df_train=df_train,
+        k_min=1,
+        k_max=20,
+        iterations_per_k=20,
+        space=ColorSpace.LAB,
+        method='joint',
+        degree=1,
+        pose=False,
+        reg_degree=0.0,
+        reg_pose=0.0,
+        boundary_penalty_factor=0.0,
+        r=4
+    )
+    pickle.dump(k_out_results, open("k_out_results.pkl", "wb"))
+
+    # Leave one out analysis
+    leave_one_out_results = leave_one_color_out_analysis(
+        df_train=df_train,
+        model_class=CorrectionByModel,
+        space=ColorSpace.LAB,
+        method='joint',
+        degree=1,
+        pose=False,
+        reg_degree=0.0,
+        reg_pose=0.0,
+        boundary_penalty_factor=0.0,
+        r=4
+    )
+    pickle.dump(leave_one_out_results, open("leave_one_out_results.pkl", "wb"))
+
