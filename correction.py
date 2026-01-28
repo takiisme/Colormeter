@@ -156,6 +156,9 @@ class CorrectionByModel:
         self.w2 = None
         self.pitch = None
         self.roll = None
+        self.l = None
+        self.a = None
+        self.b = None
     
     def build_design_matrix(self):
         """
@@ -179,9 +182,9 @@ class CorrectionByModel:
         m0 = self.m0
         m1 = self.m1
         m2 = self.m2
-        w0 = self.w0
-        w1 = self.w1
-        w2 = self.w2
+        w0 = self.l
+        w1 = self.a
+        w2 = self.b
         N = len(m0)
 
         # pose terms
@@ -350,6 +353,10 @@ class CorrectionByModel:
         self.w0 = df[f'white_r{self.r}_R'].values
         self.w1 = df[f'white_r{self.r}_G'].values
         self.w2 = df[f'white_r{self.r}_B'].values
+        convert_rgb_cols(df, prefix=f'white_r{self.r}_', to=ColorSpace.LAB)
+        self.l = df[f'white_r{self.r}_l'].values
+        self.a = df[f'white_r{self.r}_a'].values
+        self.b = df[f'white_r{self.r}_b'].values
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         
@@ -424,6 +431,10 @@ class CorrectionByModel:
         self.w0 = df[f'white_r{self.r}_R'].values
         self.w1 = df[f'white_r{self.r}_G'].values
         self.w2 = df[f'white_r{self.r}_B'].values
+        convert_rgb_cols(df, prefix=f'white_r{self.r}_', to=ColorSpace.LAB)
+        self.l = df[f'white_r{self.r}_l'].values
+        self.a = df[f'white_r{self.r}_a'].values
+        self.b = df[f'white_r{self.r}_b'].values
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         # Compute unclipped corrected values

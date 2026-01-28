@@ -837,8 +837,21 @@ def run_leave_one_out_analysis(df_train):
     print("\n" + "="*100)
     print("RUNNING LEAVE-ONE-COLOR-OUT ANALYSIS")
     print("="*100)
-    
+
     results = leave_one_color_out_analysis(
+        df_train=df_train,
+        model_class=CorrectionByModel,
+        space=ColorSpace.LAB,
+        method='joint',
+        degree=1,
+        pose=False,
+        reg_degree=0.0,
+        reg_pose=0.0,
+        boundary_penalty_factor=0.0,
+        r=4
+    )
+    
+    results = leave_one_color_out_analysis_fix(
         df_train=df_train,
         model_class=CorrectionByModel,
         space=ColorSpace.LAB,
