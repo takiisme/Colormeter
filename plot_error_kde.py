@@ -57,5 +57,5 @@ for i, channel in enumerate(['l', 'a', 'b']):
     axs[i].set_ylabel("")
 
 axs[0].set_ylabel("Density")
-# axs[0].legend()
-plt.savefig("Images/plot_error_kde.pdf")
+axs[0].legend()
+plt.savefig("plot_error_kde.pdf")

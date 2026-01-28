@@ -5,9 +5,8 @@ from tueplots.bundles import icml2024
 from tueplots.constants.color import rgb
 from constants import GT
 
-nrows, ncols = 1, 2
-plt.rcParams.update(icml2024(column='full', nrows=nrows, ncols=ncols))
-
+nrows, ncols = 1, 1
+plt.rcParams.update(icml2024(column='half', nrows=nrows, ncols=ncols))
 
 # stats_acc = pd.read_csv('cv_k_out_detailed.csv', index_col=0).assign(
 #     below2 = lambda x: x['delta_E'] < 2.0,
@@ -34,14 +33,14 @@ plt.rcParams.update(icml2024(column='full', nrows=nrows, ncols=ncols))
 # ).reset_index()
 
 cv_stats = pd.read_csv('cv_k_out_detailed.csv', index_col=0).assign(
-    below5 = lambda x: x['delta_E'] < 5.0
+    below6 = lambda x: x['delta_E'] < 6.0
 ).groupby(['k', 'iteration']).agg(
-    below5_rate = ('below5', 'mean'),
+    below6_rate = ('below6', 'mean'),
     avg_error = ('delta_E', 'mean')
 ).groupby('k').agg(
-    below5_rate = ('below5_rate', 'mean'),
-    below5_rate_lq = ('below5_rate', lambda x: np.percentile(x, 25)),
-    below5_rate_uq = ('below5_rate', lambda x: np.percentile(x, 75)),
+    below6_rate = ('below6_rate', 'mean'),
+    below6_rate_lq = ('below6_rate', lambda x: np.percentile(x, 25)),
+    below6_rate_uq = ('below6_rate', lambda x: np.percentile(x, 75)),
     avg_error = ('avg_error', 'mean'),
     avg_error_std = ('avg_error', 'std'),
     scaling_avg_error_lq = ('avg_error', lambda x: np.percentile(x, 25)),
@@ -57,19 +56,17 @@ df_test = pd.read_csv('Data/test_corrected.csv').assign(
         (df['scaling_r4_b'] - df['gt__b']) ** 2
     )
 )
-scaling_below5 = np.mean(df_test['scaling_delta_E'] < 5.0)
+scaling_below6 = np.mean(df_test['scaling_delta_E'] < 6.0)
 # scaling_below10 = np.mean(df_test['scaling_delta_E'] < 10.0)
 scaling_avg_error = np.mean(df_test['scaling_delta_E'])
 scaling_avg_error_std = np.std(df_test['scaling_delta_E'])
 
 
-fig, axs = plt.subplots(nrows, ncols)
-# < 5 error rate
-ax = axs[0]
+fig, ax = plt.subplots(nrows, ncols)
 # ax.errorbar(
 #     cv_stats['k'],
-#     cv_stats['below5_rate'],
-#     yerr=[cv_stats['below5_rate'] - cv_stats['below5_rate_lq'], cv_stats['below5_rate_uq'] - cv_stats['below5_rate']],
+#     cv_stats['below6_rate'],
+#     yerr=[cv_stats['below6_rate'] - cv_stats['below6_rate_lq'], cv_stats['below6_rate_uq'] - cv_stats['below6_rate']],
 #     linestyle='dotted', marker='o',
 #     # label=r'Reduced model',
 #     color=rgb.tue_green,
@@ -77,31 +74,32 @@ ax = axs[0]
 # )
 ax.plot(
     cv_stats['k'],
-    cv_stats['below5_rate'],
+    cv_stats['below6_rate'],
     linestyle='-', marker='o',
-    # label=r'Reduced model',
+    label=r'Reduced model',
     color=rgb.tue_green,
     markersize=3
 )
 ax.fill_between(
     cv_stats['k'],
-    cv_stats['below5_rate_lq'],
-    cv_stats['below5_rate_uq'],
+    cv_stats['below6_rate_lq'],
+    cv_stats['below6_rate_uq'],
     color=rgb.tue_green, alpha=0.2
 )
 ax.axhline(
-    y=scaling_below5,
+    y=scaling_below6,
     color=rgb.tue_green,
     linestyle='-', alpha=0.5,
-    label='Scaling, Euclidean error $<5$'
+    label='Scaling'
 )
 ax.set_ylim(0.00, 0.30)
 yticks = np.arange(0.00, 0.35, 0.05)
 ax.set_yticks(
     ticks=yticks,
-    # labels=[f'{y*100:.0f}\\%' for y in yticks]
+    labels=[f'${y*100:.0f}\\%$' for y in yticks],
+    color=rgb.tue_green
 )
-ax.set_ylabel(r'Proportion of Euclidean error $<5$', color=rgb.tue_green)
+ax.set_ylabel(r'\% of Euclidean error $<6$', color=rgb.tue_green)
 xticks = np.arange(2, 22, 2)
 ax.set_xticks(xticks)
 # ax.legend()
@@ -121,7 +119,7 @@ ax2.plot(
     cv_stats['k'],
     cv_stats['avg_error'],
     linestyle='-', marker='s',
-    # label='Reduced model, average Euclidean error',
+    label='Reduced model',
     color=rgb.tue_violet,
     markersize=3
 )
@@ -135,18 +133,30 @@ ax2.axhline(
     y=scaling_avg_error,
     color=rgb.tue_violet,
     linestyle='-', alpha=0.5,
-    label='Scaling, average Euclidean error'
+    label='Scaling'
 )
 ax2.set_ylabel('Average Euclidean error', color=rgb.tue_violet)
+yticks = np.arange(0, 45, 5)
+ax2.set_yticks(
+    ticks=yticks,
+    labels=[f'${y}$' for y in yticks],
+    color=rgb.tue_violet
+)
 ax2.set_ylim(0, 40)
 # xticks = np.arange(0, 45, 5)
 # ax2.set_yticks(ticks=xticks, labels=xticks, color=rgb.tue_violet)
 
 # ax.set_xticks(np.arange(2, 22, 2))
 ax.set_xlabel(r'$k$')
-# ax.legend()
+ax.legend(loc='upper left')
+ax2.legend(loc='upper right')
+
+plt.savefig('Images/plot_cv_k_out_acc.pdf')
+
 
 # LOO CV
+fig, ax = plt.subplots(1, 1)
+
 stats_loo = pd.read_csv('loo_detailed_points.csv', index_col=0).groupby(['left_out_color']).agg(
     avg_error = ('delta_E', 'mean'),
     avg_error_std = ('delta_E', 'std')
@@ -163,7 +173,6 @@ stats_loo = pd.read_csv('loo_detailed_points.csv', index_col=0).groupby(['left_o
 )
 # print(stats_loo)
 
-ax = axs[1]
 ax.bar(
     stats_loo['left_out_color'],
     stats_loo['avg_error'],
@@ -173,6 +182,6 @@ ax.bar(
 )
 ax.set_xlim(0.1, 24.9)
 ax.set_xlabel('Left-out color index')
-ax.set_ylabel('Average Euclidean error ($k=1$)')
+ax.set_ylabel('Average Euclidean error')
 
-plt.savefig('plot_cv_k_out_acc.pdf')
+plt.savefig('Images/plot_cv_loo.pdf')
