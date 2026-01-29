@@ -79,7 +79,7 @@ corrector_model.train(df_train) # Comment this line out and uncomment the block 
 
 ##############################################################################
 # Train the model with alpha = 0.05
-# corrector_model.train_with_bootstrap(df_train, n_iterations=1000, alpha=0.05)
+# corrector_model.train_with_bootstrap(df_train, n_iterations=2, alpha=0.05)
 # np.save("bootstrapped_coeffs_pose=False.npz", np.array(corrector_model.bootstrapped_coeffs))
 
 # # Flatten coefficients for file export
@@ -132,5 +132,5 @@ axs[1] = plot_ecdf(axs[1], eucl_model_lab, label="model in Lab", color='purple')
 axs[0].legend()
 axs[1].legend()
 fig.savefig("error_ecdf_comparison.png")
-run_comprehensive_cross_validation(df_raw)
-run_leave_one_out_analysis(df_raw)
+# run_comprehensive_cross_validation(df_raw)
+# run_leave_one_out_analysis(df_raw)

@@ -490,7 +490,7 @@ class CorrectionByModel:
                 df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
 
             current_coeffs = self.train(df_resampled)
-            
+
             if self.method == 'joint':
                 self.bootstrapped_coeffs.append(current_coeffs.copy())
             else:
