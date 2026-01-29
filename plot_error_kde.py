@@ -9,7 +9,7 @@ from constants import COLOR
 nrows, ncols = 1, 3
 plt.rcParams.update(icml2024(column='full', nrows=nrows, ncols=ncols))
 
-df_test = pd.read_csv("Data/test_corrected.csv")
+df_test = pd.read_csv("Data/test_corrected_new.csv")
 
 LABEL = {
     'l': r'$L^*$',
@@ -58,4 +58,4 @@ for i, channel in enumerate(['l', 'a', 'b']):
 
 axs[0].set_ylabel("Density")
 axs[0].legend()
-plt.savefig("plot_error_kde.pdf")
+plt.savefig("Images/plot_error_kde.pdf")

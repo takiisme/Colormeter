@@ -133,7 +133,7 @@
 \begin{abstract}
 While colorimetry devices can accurately measure colors of objects, they are too expensive for daily usage such as detecting color of a scratched surface for repainting.
 Color picking from images captured by a smartphone is subject to distortion due to ambient light.
-We statistically analyze a deterministic and a data-driven color correction method which improve the accuracy of color detection using smartphone images,
+We statistically analyze a deterministic and a data-driven color correction method which improves the accuracy of color detection using smartphone images,
 showing that simple, post-hoc correction can greatly improve the quality of color measurements done by smartphones.
 \end{abstract}
 
@@ -158,9 +158,10 @@ The Euclidean distance on the $L^* a^* b^*$ space reflects the perceived differe
 
 To evaluate the performance of the correction methods, we define an accuracy thresholds.
 The first corresponds to the human chromatic sensitivity threshold, while the second represents a small but perceptible color difference.
-The smallest wavelength difference that can be perceived as a chromatic difference under constant luminance conditions is approximately $1$~nm, which corresponds to about an Euclidean distance of approximately $1.27$ in the $L^* a^* b^*$ color space \citep{oleari2015}.
+\todo{Delete this sentence!}
+The smallest wavelength difference that can be perceived as a chromatic difference under constant luminance conditions (''just noticeable difference'') is approximately $1$~nm, which corresponds to about an Euclidean distance of approximately $1.27$ in the $L^* a^* b^*$ color space \citep{oleari2015}.
 The authors further mentioned that a few multiples of the just noticeable difference can still be considered small.
-Accordingly, we define the Euclidean error $6$ (approximately five times the jost noticable difference) as the \emph{small color difference threshold} in our study.
+Accordingly, we define the Euclidean error $6$ (approximately five times the just noticeable difference) as the \emph{small color difference threshold} in our study.
 % \todo{Check whether these arbitrary values make sense.}
 
 % The model implemented so far achieves color corrections with an error below the first threshold in \texttt{INSERT}\% of cases on average, and below the second threshold in \texttt{INSERT}\% of cases on average.\todo{text}
@@ -252,7 +253,7 @@ Measurements along the $a^*$ axis remain close to the corresponding standard val
 
 Our app is equipped with a simple, deterministic correction algorithm.
 Let $(R_\textup{m}, G_{\textup{m}}, B_\textup{m})$ be the measured RGB values of a color card.
-We assume that the measured color $(R_\textup{w}, G_{\textup{w}}, B_\textup{w})$ of the white reference is the brightness color one can measure under the ambient light.
+We assume that the measured color $(R_\textup{w}, G_{\textup{w}}, B_\textup{w})$ of the white reference is the brightest color one can measure under the ambient light.
 To recover the full RGB space $[0, 255]^3$ from the measurable color space $[0, R_\textup{w}] \times [0, G_\textup{w}] \times [0, B_\textup{w}]$, we apply a channel-wise rescaling.
 The corrected RGB values are given by
 \begin{equation*}
@@ -323,7 +324,7 @@ The model is fitted by minimizing the empirical risk associated with the loss fu
     \ell(y, \hat{y})
     = \left( L^* - \widehat{L^*} \right)^2 + \left( a^* - \widehat{a^*} \right)^2 + \left( b^* - \widehat{b^*} \right)^2,
 \end{equation*}
-where $y = (L^*, a^*, b^*)$ denotes the ground truth color and $\hat{y} = (\widehat{L^*}, \widehat{a^*}, \widehat{b^*})$ denotes the correction given by the model.
+where $y = (L^*, a^*, b^*)$ denotes the ground truth color and $\hat{y} = (\widehat{L^*}, \widehat{a^*}, \widehat{b^*})$ denotes the prediction given by the model.
 For simplicity, we refer to $\sqrt{\ell(y, \hat{y})}$, the Euclidean distance between $y$ and $\hat{y}$, as the \emph{Euclidean error} of a correction.
 % For the purpose of uncertainty quantification,
 % we construct bootstrap confidence intervals \cite{davison1997,efron1994} for the estimated coefficients.
@@ -360,10 +361,14 @@ We validate this assumption by comparing the full model \eqref{eq:model} with a 
 % \end{figure}
 
 We train the full and reduced model on $80\%$ of the measurements and test them on the remaining $20\%$.
-We apply scaling correction to the same test set.
+We apply scaling correction to the same test set.\todo{
+    Emphasize correction.    
+}
 \cref{fig:abstract}(d) shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space on the test set.
 Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
-In median, correction by scaling reduces the Euclidean error by $55\%$ relative to uncorrected colors,
+In median,\todo{
+    The median error is ...
+} correction by scaling reduces the Euclidean error by $55\%$ relative to uncorrected colors,
 while the full and reduced models yield a reduction of $65\%$ and $66\%$, respectively.
 Without correction, only $2\%$ of measured colors fall below the small color difference threshold (Euclidean error $\leq 6$).
 Using correction by scaling, we increase the proportion to $26\%$.
@@ -396,10 +401,13 @@ The maximum error incurred by either model is lower than the scaling method.
 To gain some insights into how the correction methods reduce the Euclidean error, we visualize the error per channel in \cref{fig:error-kde}.
 % As the two model variants yield comparable results, we only display the reduced model.
 One can observe a shift of error distribution in the $L^*$ coordinates toward zero resulted from the correction methods,
-whereas the error distributions in the other two channels are all centered at approximately zero.
+whereas the error distributions in the other two channels are all centered at approximately zero.\todo{
+    Models make the error concentrated.
+}
 These observations show that the correction methods are capable of removing bias toward darker colors, but cannot eliminate uncertainty in hue.
 
 \begin{figure*}[htb]
+    % Change the legend to show what the two lines mean.
     \includegraphics{../Images/plot_error_kde.pdf}%\\
     \caption{Kernel density plots for channel-wise difference from ground truth.}
     \label{fig:error-kde}
@@ -457,7 +465,7 @@ but there is large fluctuation across choices of colors to leave out.
 
 \begin{figure}
     \includegraphics{../Images/plot_cv_loo.pdf}%\\
-    \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 trials) of the reduced model on single left-out color. The color of each bar is the color left out.}
+    \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 measurements) of the reduced model on single left-out color. The color of each bar is the color left out.}
     \label{fig:cv-loo}
 \end{figure}
 
@@ -467,8 +475,12 @@ but there is large fluctuation across choices of colors to leave out.
 
 To identify colors with high impact on generalization, we perform leave-one-out CV, training the model on all but the $j$-th color for $j = 1,\dots,24$ and testing it on the single color left out.
 The results of leave-one-out cross validation (\cref{fig:cv-loo}) reveal an uneven distribution of generalization performance across colors.
-We find that color 11 (\textcolor{c11}{yellow green}) is the primary driver of failure of generalization.
-Notably, color 11 is both a member of the Greenish group and possesses the largest green ($G$) channel intensity in the dataset.
+We find that color 11\todo{
+    Explain this color indexing.
+} is the primary driver of failure of generalization.
+Notably, color 11 is both a member of the Greenish\todo{
+    Avoid this term.
+} group and possesses the largest green ($G$) channel intensity in the dataset.
 \todo[inline]{We might need to revise the cross validation results.}
 
 % The significant surge in MSE upon the omission of greenish samples—and Sample 11 in particular—can be attributed to the non-linearities inherent in the sensor’s Green-channel response or the spectral distribution of the target illuminant. In many Bayer-filter-based sensors, the Green channel captures the majority of the luminance information and serves as the primary anchor for the transformation matrix.
@@ -479,7 +491,9 @@ Notably, color 11 is both a member of the Greenish group and possesses the large
 
 Our study provides empirical evidence that rescaling RGB channels according to a white reference can improve the quality of color measurements made by smartphones.
 Under usual daylight, a multi-target linear model can further avoid large deviations from the true color,
-although it does not prevail over the scaling method in the average case.
+although it does not prevail over the scaling method in the average case.\todo{
+    Explain this exactly.
+}
 We confirmed that the pitch and roll angle of the camera have little influence on color correction using white reference,
 and identified that green-toned colors play an important role in the generalization of our models.
 % \todo[inline]{We might need to revise the cross validation results.}
