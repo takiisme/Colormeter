@@ -31,4 +31,4 @@ corrector_model_reduced = CorrectionByModel(space=ColorSpace.LAB, boundary_penal
 corrector_model_reduced.train(df_train.copy())
 df_test = corrector_model_reduced.apply_correction(df_test.copy(), prefix='reduced')
 
-df_test.to_csv("Data/test_corrected.csv", index=False)
+df_test.to_csv("Data/test_corrected_new.csv", index=False)

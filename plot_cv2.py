@@ -32,7 +32,7 @@ plt.rcParams.update(icml2024(column='half', nrows=nrows, ncols=ncols))
 #     avg_error_std = ('avg_error', 'std')
 # ).reset_index()
 
-cv_stats = pd.read_csv('cv_k_out_detailed.csv', index_col=0).assign(
+cv_stats = pd.read_csv('New results/cv_k_out_detailed.csv', index_col=0).assign(
     below6 = lambda x: x['delta_E'] < 6.0
 ).groupby(['k', 'iteration']).agg(
     below6_rate = ('below6', 'mean'),
@@ -92,14 +92,14 @@ ax.axhline(
     linestyle='-', alpha=0.5,
     label='Scaling'
 )
-ax.set_ylim(0.00, 0.30)
-yticks = np.arange(0.00, 0.35, 0.05)
+ax.set_ylim(0.00, 0.45)
+yticks = np.arange(0.00, 0.50, 0.05)
 ax.set_yticks(
     ticks=yticks,
     labels=[f'${y*100:.0f}\\%$' for y in yticks],
     color=rgb.tue_green
 )
-ax.set_ylabel(r'\% of Euclidean error $<6$', color=rgb.tue_green)
+ax.set_ylabel(r'Small color difference rate', color=rgb.tue_green)
 xticks = np.arange(2, 22, 2)
 ax.set_xticks(xticks)
 # ax.legend()
@@ -148,8 +148,8 @@ ax2.set_ylim(0, 40)
 
 # ax.set_xticks(np.arange(2, 22, 2))
 ax.set_xlabel(r'$k$')
-ax.legend(loc='upper left')
-ax2.legend(loc='upper right')
+ax.legend(loc='upper center')
+ax2.legend(loc='lower center')
 
 plt.savefig('Images/plot_cv_k_out_acc.pdf')
 
@@ -157,9 +157,10 @@ plt.savefig('Images/plot_cv_k_out_acc.pdf')
 # LOO CV
 fig, ax = plt.subplots(1, 1)
 
-stats_loo = pd.read_csv('loo_detailed_points.csv', index_col=0).groupby(['left_out_color']).agg(
+stats_loo = pd.read_csv('New results/loo_detailed_points.csv', index_col=0).groupby(['left_out_color']).agg(
     avg_error = ('delta_E', 'mean'),
-    avg_error_std = ('delta_E', 'std')
+    avg_error_std = ('delta_E', 'std'),
+    below6_rate = ('delta_E', lambda x: np.mean(x < 6.0))
 ).reset_index().merge(
     pd.DataFrame(GT),
     left_on='left_out_color',
@@ -171,7 +172,7 @@ stats_loo = pd.read_csv('loo_detailed_points.csv', index_col=0).groupby(['left_o
         df['gt__R'], df['gt__G'], df['gt__B']
     ))
 )
-# print(stats_loo)
+stats_loo.to_csv('stats_loo.csv', index=False)
 
 ax.bar(
     stats_loo['left_out_color'],
