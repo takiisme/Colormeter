@@ -449,17 +449,17 @@ but there is large fluctuation across choices of colors to leave out.
 % This behavior suggests that the model maintains its predictive accuracy even when trained on a small number of colors.
 % We therefore believe that our results generalize beyond the 24 colors we collected data from.
 
-% \begin{figure}[ht]
-%     \includegraphics{../Images/plot_cv_k_out_acc.pdf}%\\
-%     \caption{Validation performance of the reduced model on $k$ left-out colors. The shaded bands show the upper and lower quartiles over 20 trials per $k$. The horizontal lines represent the average performance of the scaling method.}
-%     \label{fig:cv-k}
-% \end{figure}
+\begin{figure}[ht]
+    \includegraphics{../Images/plot_cv_k_out_acc.pdf}%\\
+    \caption{Validation performance of the reduced model on $k$ left-out colors. The shaded bands show the upper and lower quartiles over 20 trials per $k$. The horizontal lines represent the average performance of the scaling method.}
+    \label{fig:cv-k}
+\end{figure}
 
-% \begin{figure}
-%     \includegraphics{../Images/plot_cv_loo.pdf}%\\
-%     \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 trials) of the reduced model on single left-out color. The color of each bar is the color left out.}
-%     \label{fig:cv-loo}
-% \end{figure}
+\begin{figure}
+    \includegraphics{../Images/plot_cv_loo.pdf}%\\
+    \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 trials) of the reduced model on single left-out color. The color of each bar is the color left out.}
+    \label{fig:cv-loo}
+\end{figure}
 
 
 % In the targeted leave-out experiments (see \cref{tab:cv-folds}), we observe that the model trained on all colors but the green ones fail to generalize to the green colors,
