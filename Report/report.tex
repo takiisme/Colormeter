@@ -224,7 +224,7 @@ The dataset we use in subsequent analysis consist of 480 measurements taken in t
 During data collection, no direct measurement was available to confirm whether the lighting condition strictly corresponded to D65.
 We use the measured colors of the white reference to assess the deviation from this condition.
 The measured value along the $L^*$ axis corresponds to $77.2\%$ of the expected value, which can be explained by the fact that paper does not reflect all incident light.
-Along the $b^*$ axis, the measured values are $-3.53 \pm 2.07$, whereas the D65 standard white has a value of $-0.0104$, indicating a slight tendency toward blue-ish color shifts.
+Along the $b^*$ axis, the measured values are $-3.53 \pm 2.07$, whereas the D65 standard white has a value of $-0.0104$, indicating a slight tendency toward the blue chromaticity region.
 (A larger $b^*$ value means more blue in the color.)
 However, the relative error remains below $5\%$, and this deviation is considered negligible for our analysis. 
 Measurements along the $a^*$ axis remain close to the corresponding standard value.
@@ -360,16 +360,12 @@ We validate this assumption by comparing the full model \eqref{eq:model} with a 
 %     \label{fig:error-ecdf}
 % \end{figure}
 
-We train the full and reduced model on $80\%$ of the measurements and test them on the remaining $20\%$.
-We apply scaling correction to the same test set.\todo{
+We partition the measurements into an 80/20 train-test split, training both the full and reduced models on the former. To evaluate the efficacy of the correction step, we apply scaling correction directly to the held-out test set, allowing for a rigorous comparison against the model-based predictions.\todo{
     Emphasize correction.    
 }
 \cref{fig:abstract}(d) shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space on the test set.
 Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
-In median,\todo{
-    The median error is ...
-} correction by scaling reduces the Euclidean error by $55\%$ relative to uncorrected colors,
-while the full and reduced models yield a reduction of $65\%$ and $66\%$, respectively.
+On average, the median Euclidean error is reduced by 55\% when applying scaling correction relative to uncorrected colors, while the full and reduced models yield a reduction of $65\%$ and $66\%$, respectively.
 Without correction, only $2\%$ of measured colors fall below the small color difference threshold (Euclidean error $\leq 6$).
 Using correction by scaling, we increase the proportion to $26\%$.
 The full and reduced models yield a small color difference rate of $31\%$ and $35\%$, respectively.
@@ -475,12 +471,9 @@ but there is large fluctuation across choices of colors to leave out.
 
 To identify colors with high impact on generalization, we perform leave-one-out CV, training the model on all but the $j$-th color for $j = 1,\dots,24$ and testing it on the single color left out.
 The results of leave-one-out cross validation (\cref{fig:cv-loo}) reveal an uneven distribution of generalization performance across colors.
-We find that color 11\todo{
+We find that color 11, which possesses the largest green ($G$) channel intensity in the dataset, \todo{
     Explain this color indexing.
 } is the primary driver of failure of generalization.
-Notably, color 11 is both a member of the Greenish\todo{
-    Avoid this term.
-} group and possesses the largest green ($G$) channel intensity in the dataset.
 \todo[inline]{We might need to revise the cross validation results.}
 
 % The significant surge in MSE upon the omission of greenish samples—and Sample 11 in particular—can be attributed to the non-linearities inherent in the sensor’s Green-channel response or the spectral distribution of the target illuminant. In many Bayer-filter-based sensors, the Green channel captures the majority of the luminance information and serves as the primary anchor for the transformation matrix.
