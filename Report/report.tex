@@ -449,17 +449,17 @@ but there is large fluctuation across choices of colors to leave out.
 % This behavior suggests that the model maintains its predictive accuracy even when trained on a small number of colors.
 % We therefore believe that our results generalize beyond the 24 colors we collected data from.
 
-\begin{figure}[ht]
-    \includegraphics{../Images/plot_cv_k_out_acc.pdf}%\\
-    \caption{Validation performance of the reduced model on $k$ left-out colors. The shaded bands show the upper and lower quartiles over 20 trials per $k$. The horizontal lines represent the average performance of the scaling method.}
-    \label{fig:cv-k}
-\end{figure}
+% \begin{figure}[ht]
+%     \includegraphics{../Images/plot_cv_k_out_acc.pdf}%\\
+%     \caption{Validation performance of the reduced model on $k$ left-out colors. The shaded bands show the upper and lower quartiles over 20 trials per $k$. The horizontal lines represent the average performance of the scaling method.}
+%     \label{fig:cv-k}
+% \end{figure}
 
-\begin{figure}
-    \includegraphics{../Images/plot_cv_loo.pdf}%\\
-    \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 trials) of the reduced model on single left-out color. The color of each bar is the color left out.}
-    \label{fig:cv-loo}
-\end{figure}
+% \begin{figure}
+%     \includegraphics{../Images/plot_cv_loo.pdf}%\\
+%     \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 trials) of the reduced model on single left-out color. The color of each bar is the color left out.}
+%     \label{fig:cv-loo}
+% \end{figure}
 
 
 % In the targeted leave-out experiments (see \cref{tab:cv-folds}), we observe that the model trained on all colors but the green ones fail to generalize to the green colors,
@@ -515,11 +515,11 @@ After the full processing pipeline, the inverse weighting could be applied to th
 
 % TODO: Explain here, in one sentence per person, what each group member contributed.
 All authors participated in data collection.
-Zhi Jing performed exploratory analysis, implemented the models, and conducted preliminary experiments with them.
+Zhi Jing assisted in exploratory analysis, implemented the models, and conducted preliminary experiments.
 Enrico Vesentini identified the objects that theoretically satisfy the properties required for the purposes of this study, and suggested improvements to the workflow.
-T\`ai Th\'ai performed exploratory analysis, designed the cross validation experiments, and improved the models.
+T\`ai Th\'ai engineered core codebase for exploratory analysis, performed bootstrapping for robustness analysis, designed the cross validation experiments, architected and improved the models.
 Jonas Thumbs developed the app for data collection, performed exploratory analysis, and designed the graphical abstract.
-Baisu Zhou performed exploratory analysis, participated in implementation and analysis of the methods, and finalized the figures and the report.
+Baisu Zhou performed exploratory analysis, engineered the project infrastructure, participated in the analysis of the methods, and finalized the figures and the report.
 
 % \section*{Notes} 
 

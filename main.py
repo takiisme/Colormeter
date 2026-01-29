@@ -79,7 +79,7 @@ corrector_model.train(df_train) # Comment this line out and uncomment the block 
 
 ##############################################################################
 # Train the model with alpha = 0.05
-# corrector_model.train_with_bootstrap(df_train, n_iterations=2, alpha=0.05)
+# corrector_model.train_with_bootstrap(df_train, n_iterations=1000, alpha=0.05)
 # np.save("bootstrapped_coeffs_pose=False.npz", np.array(corrector_model.bootstrapped_coeffs))
 
 # # Flatten coefficients for file export
