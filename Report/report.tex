@@ -172,7 +172,9 @@ Accordingly, we define the Euclidean error $6$ (approximately five times the jus
 We have developed our own color measurement app with built-in correction using white reference.
 As the transformation from RGB to $L^* a^* b^*$ is intended for measurements under CIE's D65 lighting condition \citep{oleari2015},
 we collected data using our app under a lighting condition similar to D65 (\cref{sec:data}).
-We further compared the app's correction-by-scaling method (\cref{sec:scaling}) with a modeling approach (\cref{sec:model}).
+We further compared the app's correction-by-scaling method (\cref{sec:scaling})\todo{
+    Mention that our app can do this, but we do not do this in data collection?
+} with a modeling approach (\cref{sec:model}).
 While the model provides insights into the color correction mechanism,
 the scaling method proves to be more robust (\cref{sec:results}).
 
@@ -205,7 +207,8 @@ We used a color reference sheet designed for camera calibration as the object fr
 The reference sheet consists of 24 color cards and provides accurate ground-truth RGB values for each color.
 We used two phones, Google Pixel 8 Pro and Samsung Galaxy S21 Ultra, for data collection.
 The data were collected indoors on a desk in front of the window under natural daylight on November 19, 2025 in Tübingen, Germany.
-The procedure is as follows.
+We assume our lighting condition approximates the D65 standard lighting condition, so that the transformation from RGB to $L^* a^* b^*$ is valid.
+The data collection procedure is as follows.
 
 We placed a white piece of paper (called \emph{white reference} in the following) with a cut-out square hole over the array of colors to ensure similar conditions for all measurements.
 Only one color card was visible to the camera at any time.
@@ -221,13 +224,13 @@ We tried not to vary the yaw angle during dataset collection, since the app only
 % Taking one dataset of $10 \times 24$ images took between 10 and 20 minutes, so the daylight might vary slightly, but not strongly over that time.
 The dataset we use in subsequent analysis consists of 480 measurements taken in two runs.
 
-During data collection, no direct measurement was available to confirm whether the lighting condition strictly corresponded to D65.
-We use the measured colors of the white reference to assess the deviation from this condition.
-The measured value along the $L^*$ axis corresponds to $77.2\%$ of the expected value, which can be explained by the fact that paper does not reflect all incident light.
-Along the $b^*$ axis, the measured values are $-3.53 \pm 2.07$, whereas the D65 standard white has a value of $-0.0104$, indicating a slight tendency toward the blue chromaticity region.
-(A larger $b^*$ value means more blue in the color.)
-However, the relative error remains below $5\%$, and this deviation is considered negligible for our analysis. 
-Measurements along the $a^*$ axis remain close to the corresponding standard value.
+% During data collection, no direct measurement was available to confirm whether the lighting condition strictly corresponded to D65.
+% We use the measured colors of the white reference to assess the deviation from this condition.
+% The measured value along the $L^*$ axis corresponds to $77.2\%$ of the expected value, which can be explained by the fact that paper does not reflect all incident light.
+% Along the $b^*$ axis, the measured values are $-3.53 \pm 2.07$, whereas the D65 standard white has a value of $-0.0104$, indicating a slight tendency toward the blue chromaticity region.
+% (A larger $b^*$ value means more blue in the color.)
+% However, the relative error remains below $5\%$, and this deviation is considered negligible for our analysis. 
+% Measurements along the $a^*$ axis remain close to the corresponding standard value.
 
 % Our choice of lighting condition is an attempt to approximate the D65 standard lighting condition, under which the transformation from RGB to $L^* a^* b^*$ is valid.
 % \cref{tab:white-comparison} compares the $L^* a^* b^*$ values of the white color under the D65 condition and the white reference used in our experiment.
@@ -249,7 +252,7 @@ Measurements along the $a^*$ axis remain close to the corresponding standard val
 % \end{tabular}
 % \end{table}
 
-\subsection{Correction by Scaling}%\label{sec:scaling}
+\subsection{Correction by Scaling}\label{sec:scaling}
 
 Our app is equipped with a simple, deterministic correction algorithm.
 Let $(R_\textup{m}, G_{\textup{m}}, B_\textup{m})$ be the measured RGB values of a color card.
@@ -361,9 +364,10 @@ We validate this assumption by comparing the full model \eqref{eq:model} with a 
 %     \label{fig:error-ecdf}
 % \end{figure}
 
-We partition the measurements into an 80/20 train-test split, training both the full and reduced models on the former. To evaluate the efficacy of the correction step, we apply scaling correction directly to the held-out test set, allowing for a rigorous comparison against the model-based predictions.\todo{
-    Emphasize correction.    
-}
+We partition the measurements into an 80/20 train-test split, training both the full and reduced models on the former. To evaluate the efficacy of the correction step, we apply scaling correction directly to the held-out test set, allowing for a rigorous comparison against the model-based predictions.
+% \todo{
+%     Emphasize correction.    
+% }
 \cref{fig:abstract}(d) shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space on the test set.
 Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
 The median error of raw measurements is $21.46$.
@@ -375,19 +379,20 @@ The full and reduced models yield a small color difference rate of $31\%$ and $3
 
 The error ECDFs of the two model variants shown in \cref{fig:abstract}(d) are almost identical,
 which indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
-The coefficient estimates (see \cref{tab:boot}) support this observation.\todo{Elaborate on the table.}
 The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
+\cref{tab:boot} shows the pitch and roll coefficient estimates of the full model along with bootstrap confidence intervals.
+We observe no significant effect of the roll angle on the corrected colors.
+Although the pitch angle coefficient associated with the blue channel is significantly different from zero, we argue that its effect is small based on our observations on the overall model performance.
 Thus, we focus on the reduced model in subsequent analysis.
 
-\begin{table*}
+\begin{table}
     \caption{%
-        Coefficient estimates on training set with $95\%$ percentile bootstrap confidence intervals \cite{davison1997,efron1994}.
-        To construct the confidence intervals, we resample training instances with replacement, which corresponds to ``resampling cases'' in \citet{davison1997} and ``bootstrap pairs'' in \citet{efron1994}.
-        We run 1000 bootstrap trials to obtain the confidence intervals.
+        Pitch and roll coefficient estimates on training set with $95\%$ percentile bootstrap confidence intervals \cite{davison1997,efron1994} obtained from 1000 bootstrap trials.
+        To construct the confidence intervals, we resample training instances with replacement, which corresponds to ``resampling cases'' in \citet{davison1997} and ``bootstrapping pairs'' in \citet{efron1994}.
     }
     \label{tab:boot}
     \input{../boot_table.tex}
-\end{table*}
+\end{table}
 
 While the error ECDF of the models lie above that of the scaling method,
 their confidence bands overlap.
@@ -474,10 +479,12 @@ but there is large fluctuation across choices of colors to leave out.
 
 To identify colors with high impact on generalization, we perform leave-one-out cross validation, training the model on all but the $j$-th color for $j = 1,\dots,24$ and testing it on the single color left out.
 The results of leave-one-out cross validation (\cref{fig:cv-loo}) reveal an uneven distribution of generalization performance across colors.
-We find that color 11, which possesses the largest green ($G$) channel intensity in the dataset, \todo{
-    Explain this color indexing.
-} is the primary driver of failure of generalization.
-\todo[inline]{We might need to revise the cross validation results.}
+We find that color $j = 11$, which possesses the largest green ($G$) channel intensity in the dataset,
+% \todo{
+%     Explain this color indexing.
+%}
+is the primary driver of failure of generalization.
+% \todo[inline]{We might need to revise the cross validation results.}
 
 % The significant surge in MSE upon the omission of greenish samples—and Sample 11 in particular—can be attributed to the non-linearities inherent in the sensor’s Green-channel response or the spectral distribution of the target illuminant. In many Bayer-filter-based sensors, the Green channel captures the majority of the luminance information and serves as the primary anchor for the transformation matrix.
 % If the training set lacks these high-intensity Green samples, the model fails to capture the curvature of the sensor's response in that region, leading to poor extrapolation. Essentially, the Green samples represent a critical boundary condition; without them, the transformation becomes ill-conditioned for a large portion of the visible gamut.
@@ -487,9 +494,7 @@ We find that color 11, which possesses the largest green ($G$) channel intensity
 
 Our study provides empirical evidence that rescaling RGB channels according to a white reference can improve the quality of color measurements made by smartphones.
 Under usual daylight, a multi-target linear model can further avoid large deviations from the true color,
-although it does not prevail over the scaling method in the average case.\todo{
-    Explain this exactly.
-}
+although the median improvement over the scaling method is marginal.
 We confirmed that the pitch and roll angle of the camera have little influence on color correction using white reference,
 and identified that green-toned colors play an important role in the generalization of our models.
 % \todo[inline]{We might need to revise the cross validation results.}

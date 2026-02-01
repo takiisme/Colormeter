@@ -64,4 +64,3 @@ table.index = [
     r'$\widehat{L^*}$', r'$\widehat{a^*}$', r'$\widehat{b^*}$'
 ]
 table.to_latex('boot_table.tex', escape=False)
-
