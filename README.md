@@ -1,41 +1,19 @@
-# Colorimeter App  
-**Accurate Color Measurement, Perfected.**
+# Code for Data Literacy Project
 
-Tired of mobile color measurement apps that give inconsistent, uncorrected results? Our Colorimeter App is your ultimate solution for precise, reliable color measurement using advanced calibration techniques.
+Title: _Robustness and Generalization in Smartphone-Based Colorimetry: A
+Comparative Analysis of Deterministic and Stochastic Correction Paradigms_
 
-## 🎯 Overview
-This app enables accurate color measurement of physical objects by implementing sophisticated color correction algorithms. Whether you're matching paint colors, digitizing brand colors, or conducting color analysis, our app delivers professional-grade results.
+## Folder structure
 
-## ✨ Key Features
-- **Dual Measurement Modes:**
-  - **All Mode**: Combine all datasets for comprehensive analysis
-  - **Each Mode**: Analyze individual datasets separately
-- **Advanced Color Correction**: Implements white and black reference calibration for accurate color reproduction
-- **Multi-Contributor Dataset**: Leverages data collected under various lighting conditions for robust performance
+- Data: raw data (json files) and intermediate results.
+- Images: figures used in the report.
+- Report: LaTex template and source file.
+- `analysis.ipynb`: entry point for reproducing the analysis.
 
-## ⚠️ Important Note
-**Dataset Compatibility**: The `Tai02` dataset uses a **black reference sheet** instead of white reference. Please exclude this dataset when using the **All Mode** to ensure consistent results.
+## Reproducibility
 
-## 👥 Development Team
-- **Tai Thai**
-- **Baisu Zhou** 
-- **Jonas Thumbs**
-- **Zhi**
-- **Enrico**
+To reproduce our analysis:
 
-## 🛠️ Technical Details
-Our app addresses the fundamental challenge of mobile color measurement by implementing:
-- Reference-based color correction (white/black calibration)
-- Multi-dataset validation
-- Cross-lighting condition analysis
-
-## 📥 Getting Started
-Download our application and run it on your Android device! 
-
-<!-- *For more details on installation and usage, please refer to our documentation.* -->
-
-## Reproduction of Analysis
-
-If you have [uv](https://docs.astral.sh/uv/) installed, run `uv sync` from the command line to create (or update) a virtual environment with all the dependencies.
-Alternatively, use `requirements.txt`.
-Follow the Jupyter notebook TODO to reproduce our models and results.
++ Clone the repo.
++ Install the requirements via `uv sync` (or using `requirements.txt`).
++ 

@@ -377,12 +377,14 @@ Without correction, only $2\%$ of measured colors fall below the small color dif
 Using correction by scaling, the small color difference rate is increased to $26\%$.
 The full and reduced models yield a small color difference rate of $31\%$ and $35\%$, respectively.
 
+\cref{tab:boot} shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
+We observe that both angles have non-significant effects on color correction.
+This aligns with our observations on the test error distributions.
 The error ECDFs of the two model variants shown in \cref{fig:abstract}(d) are almost identical,
 which indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
 The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
-\cref{tab:boot} shows the pitch and roll coefficient estimates of the full model along with bootstrap confidence intervals.
-We observe no significant effect of the roll angle on the corrected colors.
-Although the pitch angle coefficient associated with the blue channel is significantly different from zero, we argue that its effect is small based on our observations on the overall model performance.
+\todo{Unstable results?}
+% Although the pitch angle coefficient associated with the blue channel is significantly different from zero, we argue that its effect is small based on our observations on the overall model performance.
 Thus, we focus on the reduced model in subsequent analysis.
 
 \begin{table}
@@ -391,7 +393,17 @@ Thus, we focus on the reduced model in subsequent analysis.
         To construct the confidence intervals, we resample training instances with replacement, which corresponds to ``resampling cases'' in \citet{davison1997} and ``bootstrapping pairs'' in \citet{efron1994}.
     }
     \label{tab:boot}
-    \input{../boot_table.tex}
+    \centering
+    \setlength{\tabcolsep}{5.7pt}
+    \begin{tabular}{lrlrl}
+        \toprule
+        & \multicolumn{2}{c}{pitch} & \multicolumn{2}{c}{roll} \\
+        \midrule
+        $\widehat{L^*}$ & $-0.07$ & $[-0.11, -0.03]$ & $0.00$ & $[-0.02, 0.03]$ \\
+        $\widehat{a^*}$ & $0.02$ & $[-0.02, 0.06]$ & $-0.01$ & $[-0.04, 0.02]$ \\
+        $\widehat{b^*}$ & $0.05$ & $[-0.01, 0.11]$ & $-0.00$ & $[-0.04, 0.04]$ \\
+        \bottomrule
+    \end{tabular}
 \end{table}
 
 While the error ECDF of the models lie above that of the scaling method,

@@ -1,4 +1,7 @@
 import numpy as np
+# Suppress a future warning from pandas
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 import pandas as pd
 from correction import CorrectionByModel
 from color_conversion import convert_rgb_cols
@@ -14,17 +17,16 @@ df_raw = pd.concat([df_daylight1, df_daylight2], ignore_index=True)
 for prefix in ["color_r4_", "gt__"]:
     df_raw = convert_rgb_cols(df_raw, prefix, to=ColorSpace.LAB)
 
+# Retrieve the coefficient estimates on the full training set
 df_train = df_raw.sample(frac=0.8, random_state=42)
 training_indices = df_train.index
-df_test = df_raw.drop(training_indices)
+# df_test = df_raw.drop(training_indices)
+corrector_model = CorrectionByModel(space=ColorSpace.LAB, boundary_penalty_factor=0.0, pose=True)
+corrector_model.train(df_train.copy())
+coefs = corrector_model.coeffs
 
-corrector_model_full = CorrectionByModel(space=ColorSpace.LAB, boundary_penalty_factor=0.0, pose=True)
-corrector_model_full.train(df_train.copy())
-df_test = corrector_model_full.apply_correction(df_test.copy(), prefix='full')
-
+# Retrieve the bootstrap data
 boot_data = np.load('Data/boot_coeffs_pose=True.npy', allow_pickle=True)
-
-coefs = corrector_model_full.coeffs
 ci_low = np.percentile(boot_data, 2.5, axis=0)
 ci_high = np.percentile(boot_data, 97.5, axis=0)
 
@@ -64,4 +66,4 @@ table.index = [
     r'$\widehat{L^*}$', r'$\widehat{a^*}$', r'$\widehat{b^*}$'
 ]
 # In the end we decided to format the table manually.
-# table.to_latex('Report/boot_table.tex', escape=False)
+table.to_latex('Report/boot_table0.tex', escape=False)
