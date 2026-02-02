@@ -181,7 +181,7 @@ the scaling method proves to be more robust (\cref{sec:results}).\footnote{
 }
 
 \begin{figure*}
-    \includegraphics{../Images/graphical_abstract4.pdf}\\
+    \includegraphics{../Images/graphical_abstract.pdf}\\
     \caption{
         Workflow of data collection and color correction.
         (a) Color measurements taken by smartphone with white paper reference.
@@ -367,9 +367,6 @@ We validate this assumption by comparing the full model \eqref{eq:model} with a 
 % \end{figure}
 
 We partition the measurements into an 80/20 train-test split, training both the full and reduced models on the former. To evaluate the efficacy of the correction step, we apply scaling correction directly to the held-out test set, allowing for a rigorous comparison against the model-based predictions.
-% \todo{
-%     Emphasize correction.    
-% }
 \cref{fig:abstract}(d) shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space on the test set.
 Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
 The median error of raw measurements is $21.46$.
@@ -379,15 +376,12 @@ Without correction, only $2\%$ of measured colors fall below the small color dif
 Using correction by scaling, the small color difference rate is increased to $26\%$.
 The full and reduced models yield a small color difference rate of $31\%$ and $35\%$, respectively.
 
-\cref{tab:boot} shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
-We observe that both angles have non-significant effects on color correction.
-This aligns with our observations on the test error distributions.
 The error ECDFs of the two model variants shown in \cref{fig:abstract}(d) are almost identical,
 which indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
 The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
-\todo{Unstable results?}
-% Although the pitch angle coefficient associated with the blue channel is significantly different from zero, we argue that its effect is small based on our observations on the overall model performance.
-Thus, we focus on the reduced model in subsequent analysis.
+The observation is further supported by \cref{tab:boot}, which shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
+Both pitch and roll have non-significant effects on color correction.
+Based on these observations, we focus on the reduced model in subsequent analysis.
 
 \begin{table}
     \caption{%
