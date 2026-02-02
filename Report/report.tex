@@ -1,0 +1,558 @@
+%%%%%%%% DATA LITERACY 2025 LATEX PROJECT TEMPLATE FILE %%%%%%%%%%%%%%%%%
+%%% Based on the 2025 ICML template, available at https://icml.cc/Conferences/2025/AuthorInstructions %%%
+
+\documentclass{article}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{booktabs} % for professional tables
+
+\usepackage{tikz}
+% Corporate Design of the University of Tübingen
+% Primary Colors
+\definecolor{TUred}{RGB}{165,30,55}
+\definecolor{TUgold}{RGB}{180,160,105}
+\definecolor{TUdark}{RGB}{50,65,75}
+\definecolor{TUgray}{RGB}{175,179,183}
+
+% Secondary Colors
+\definecolor{TUdarkblue}{RGB}{65,90,140}
+\definecolor{TUblue}{RGB}{0,105,170}
+\definecolor{TUlightblue}{RGB}{80,170,200}
+\definecolor{TUlightgreen}{RGB}{130,185,160}
+\definecolor{TUgreen}{RGB}{125,165,75}
+\definecolor{TUdarkgreen}{RGB}{50,110,30}
+\definecolor{TUocre}{RGB}{200,80,60}
+\definecolor{TUviolet}{RGB}{175,110,150}
+\definecolor{TUmauve}{RGB}{180,160,150}
+\definecolor{TUbeige}{RGB}{215,180,105}
+\definecolor{TUorange}{RGB}{210,150,0}
+\definecolor{TUbrown}{RGB}{145,105,70}
+
+\definecolor{c11}{RGB}{73,232,91}
+
+% hyperref makes hyperlinks in the resulting PDF.
+% If your build breaks (sometimes temporarily if a hyperlink spans a page)
+% please comment out the following usepackage line and replace
+% \usepackage{icml2023} with \usepackage[nohyperref]{icml2023} above.
+\usepackage{hyperref}
+
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+\usepackage[accepted]{icml2025}
+
+% For theorems and such
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+% if you use cleveref..
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% Todonotes is useful during development; simply uncomment the next line
+%    and comment out the line below the next line to turn off comments
+%\usepackage[disable,textsize=tiny]{todonotes}
+\usepackage[textsize=tiny]{todonotes}
+
+
+% The \icmltitle you define below is probably too long as a header.
+% Therefore, a short form for the running title is supplied here:
+\icmltitlerunning{Project Report Template for Data Literacy 2025}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Robustness and Generalization in Smartphone-Based Colorimetry: A Comparative Analysis of Deterministic and Stochastic Correction Paradigms}
+
+% It is OKAY to include author information, even for blind
+% submissions: the style file will automatically remove it for you
+% unless you've provided the [accepted] option to the icml2023
+% package.
+
+% List of affiliations: The first argument should be a (short)
+% identifier you will use later to specify author affiliations
+% Academic affiliations should list Department, University, City, Region, Country
+% Industry affiliations should list Company, City, Region, Country
+
+% You can specify symbols, otherwise they are numbered in order.
+% Ideally, you should not use this facility. Affiliations will be numbered
+% in order of appearance and this is the preferred way.
+\icmlsetsymbol{equal}{*}
+
+\begin{icmlauthorlist}
+% Alphabetic order, equal contribution anyway.
+\icmlauthor{Zhi Jing}{equal}
+\icmlauthor{Enrico Vesentini}{equal}
+\icmlauthor{T\`ai Th\'ai}{equal}
+\icmlauthor{Jonas Thumbs}{equal}
+\icmlauthor{Baisu Zhou}{equal}
+\end{icmlauthorlist}
+
+% fill in your matrikelnummer, email address, degree, for each group member
+% \icmlaffiliation{first}{Matrikelnummer 12345678, MSc Machine Learning}
+% \icmlaffiliation{second}{Matrikelnummer 12345678, MSc Computer Science}
+% \icmlaffiliation{third}{Matrikelnummer 12345678, MSc Media Informatics}
+% \icmlaffiliation{fourth}{Matrikelnummer 12345678, MSc Medical Informatics}
+% \icmlaffiliation{fifth}{Matrikelnummer 12345678, MSc QDS}
+
+% put your email addresses here. You can use initials to save space, 
+% e.g. if you are called Max Mustermann, you can use \icmlcorrespondingauthor{MM}{max.mustermann@uni-tuebingen.de}
+% DO USE YOUR UNIVERSITY EMAIL ADDRESS!
+
+% for the Data Literacy report, to save space, you can here list the student email address of one author, who is willing to be contacted about this work in the future (e.g. in case we would like to use your report as an example for future course iterations)
+\icmlcorrespondingauthor{BZ}{baisu.zhou@student.uni-tuebingen.de} 
+% \icmlcorrespondingauthor{Initials2}{first2.last2@uni-tuebingen.de}
+% \icmlcorrespondingauthor{Initials3}{first3.last3@uni-tuebingen.de}
+% \icmlcorrespondingauthor{Initials4}{first4.last4@uni-tuebingen.de}
+% \icmlcorrespondingauthor{Initials5}{first5.last5@uni-tuebingen.de}
+
+% You may provide any keywords that you
+% find helpful for describing your paper; these are used to populate
+% the "keywords" metadata in the PDF but will not be shown in the document
+\icmlkeywords{Machine Learning, ICML}
+
+\vskip 0.3in
+]
+
+% this must go after the closing bracket ] following \twocolumn[ ...
+
+% This command actually creates the footnote in the first column
+% listing the affiliations and the copyright notice.
+% The command takes one argument, which is text to display at the start of the footnote.
+% The \icmlEqualContribution command is standard text for equal contribution.
+% Remove it (just {}) if you do not need this facility.
+
+%\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
+\printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
+
+\begin{abstract}
+While colorimetry devices can accurately measure colors of objects, they are too expensive for daily usage such as detecting color of a scratched surface for repainting.
+Color picking from images captured by a smartphone is subject to distortion due to ambient light.
+We statistically analyze a deterministic and a data-driven color correction method that improves the accuracy of color detection using smartphone images,
+showing that simple, post-hoc correction can greatly improve the quality of color measurements done by smartphones.
+\end{abstract}
+
+\section{Introduction}\label{sec:intro}
+
+Measuring color accurately is a common problem in daily life, e.g., when a surface needs to be repainted in the same color. Devices that can carry out this task, the so-called \emph{colorimeters}, are available commercially and usually cost several hundred dollars. 
+There are smartphone apps that claim to offer the same service for free by using the built-in camera.
+A challenge in this approach is how to deal with the effect of ambient light.
+Simply picking the color from a photo is not ideal because hue, saturation, and brightness depend heavily on the lighting conditions.
+One way to address this issue is to capture the color of a white reference object (e.g., a white piece of paper) at the same time and use this to correct for the ambient light.
+
+In this study, we want to find a sufficiently accurate approach to correct for ambient light and analyze the usability of measurements from such an app for color detection.
+While smartphone cameras store colors in RGB format, the RGB color space is not suitable for our analysis,
+because the distance between two points in the RGB space does not align with the perceived difference between two colors.
+In our analysis, we use the CIELAB (or $L^* a^* b^*$) color space, designed by Commission Internationale de l’Éclairage (CIE)\footnote{
+    In English: International Commission on Illumination.
+    Website: \url{https://cie.co.at/}.
+} for colorimetric applications.
+Every color in the RGB space can be mapped non-linearly to a point $(L^*, a^*, b^*)$ in the $L^* a^* b^*$ space,
+where the $L^*$ coordinate represents lightness and the $a^*, b^*$ coordinates control the hue.
+The Euclidean distance on the $L^* a^* b^*$ space reflects the perceived difference between colors.
+
+To evaluate the performance of the correction methods, we define an accuracy threshold as follows.
+The smallest wavelength difference that can be perceived as a chromatic difference under constant luminance conditions is approximately $1$~nm, which corresponds to about a Euclidean distance of approximately $1.27$ in the $L^* a^* b^*$ color space \citep{oleari2015}.
+% This distance is called ``just noticeable difference''
+This distance is defined as $1$~jnd (``just noticeable difference'').
+The authors further mentioned that a few multiples of the just noticeable difference can still be considered small.
+Accordingly, we define the Euclidean error of $6$, approximately $5$~jnd, as the \emph{small color difference threshold} in our study.
+% \todo{Check whether these arbitrary values make sense.}
+
+% The model implemented so far achieves color corrections with an error below the first threshold in \texttt{INSERT}\% of cases on average, and below the second threshold in \texttt{INSERT}\% of cases on average.\todo{text}
+% According to TODO:CITE, two colors with an Euclidean distance of $2$ on the $L^* a^* b^*$ space are barely distinguishable with human eyes.
+% This error threshold is used to calibrate colorimeters.
+% As we cannot assume a smartphone app to achieve such high accuracy, we consider an Euclidean distance of $6$\todo{Or 5? Or 10?} as small color difference.
+
+We have developed our own color measurement app\footnote{
+    The source code of the app is available at \url{https://github.com/Jonas-Thumbs/colorimeter}.
+} with built-in correction using white reference.
+As the transformation from RGB to $L^* a^* b^*$ is intended for measurements under CIE's D65 lighting condition \citep{oleari2015},
+we collected data using our app under a lighting condition similar to D65 (\cref{sec:data}).
+We further compared the app's correction-by-scaling method (\cref{sec:scaling}) with a modeling approach (\cref{sec:model}).
+While the model provides insights into the color correction mechanism,
+the scaling method proves to be more robust (\cref{sec:results}).\footnote{
+    The code for our analysis is available at \url{https://github.com/takiisme/Colormeter}.
+}
+
+\begin{figure*}
+    \includegraphics{../Images/graphical_abstract.pdf}\\
+    \caption{
+        Workflow of data collection and color correction.
+        (a) Color measurements taken by smartphone with white paper reference.
+        (b) Illustration of our color detection app.
+        During data collection, we covered all color cards but the one under measurement rather than exposing them as in the illustrative figure.
+        (c) Color correction methods.
+        (d) ECDFs of Euclidean distances from the raw and corrected colors to the ground truths.
+        The shaded areas are $95\%$ Dvoretzky–Kiefer–Wolfowitz confidence bands \cite{dvoretzky1956,wasserman2004}.
+        The dashed vertical line indicates the small color difference threshold.
+    }
+    \label{fig:abstract}
+\end{figure*}
+
+% \begin{figure}
+%     \includegraphics{../Images/plot_error_ecdf.pdf}
+% \end{figure}
+
+\section{Data and Methods}\label{sec:methods}
+
+% In this section, we describe the data collection procedure and define two color correction methods which we compare in subsequent analysis.
+
+\subsection{Data Collection}\label{sec:data}
+
+We used a color reference sheet designed for camera calibration as the object from which we collect data.
+The reference sheet consists of 24 color cards and provides accurate ground-truth RGB values for each color.
+We used two phones, Google Pixel 8 Pro and Samsung Galaxy S21 Ultra, for data collection.
+The data were collected indoors on a desk in front of the window under natural daylight on November 19, 2025 in Tübingen, Germany.
+We assume our lighting condition approximates the D65 standard lighting condition, so that the transformation from RGB to $L^* a^* b^*$ is valid.
+The data collection procedure is as follows.
+
+We placed a white piece of paper (called \emph{white reference} in the following) with a cut-out square hole over the array of colors to ensure similar conditions for all measurements.
+Only one color card was visible to the camera at any time.
+We took 10 photos for each color along with the white reference and stored the pixel RGB values.
+% Additionally, we also stored the mean colors of a $5 \times 5$ and $9 \times 9$ pixel squares at the same locations.\todo{
+%     Do we have space left to discuss the reticle size?
+% }
+% After that, we moved to the next color until we collected data for all 24 colors.
+In addition, the app stores the pitch and roll angle (see \cref{fig:abstract}) from which every measurement was made.
+To make the procedure of taking the photos as similar as possible for the 24 colors, all measurements in one run were taken by one person,
+and images were taken with a similar distribution of angles and distances over the 24 colors.
+We tried not to vary the yaw angle during dataset collection, since the app only detects pitch and roll.
+% Taking one dataset of $10 \times 24$ images took between 10 and 20 minutes, so the daylight might vary slightly, but not strongly over that time.
+The dataset we use in subsequent analysis consists of 480 measurements taken in two runs.
+
+% During data collection, no direct measurement was available to confirm whether the lighting condition strictly corresponded to D65.
+% We use the measured colors of the white reference to assess the deviation from this condition.
+% The measured value along the $L^*$ axis corresponds to $77.2\%$ of the expected value, which can be explained by the fact that paper does not reflect all incident light.
+% Along the $b^*$ axis, the measured values are $-3.53 \pm 2.07$, whereas the D65 standard white has a value of $-0.0104$, indicating a slight tendency toward the blue chromaticity region.
+% (A larger $b^*$ value means more blue in the color.)
+% However, the relative error remains below $5\%$, and this deviation is considered negligible for our analysis. 
+% Measurements along the $a^*$ axis remain close to the corresponding standard value.
+
+% Our choice of lighting condition is an attempt to approximate the D65 standard lighting condition, under which the transformation from RGB to $L^* a^* b^*$ is valid.
+% \cref{tab:white-comparison} compares the $L^* a^* b^*$ values of the white color under the D65 condition and the white reference used in our experiment.
+% The measured $L^*$ value is lower than the D65 value, because the white reference in use cannot reflect all the light.
+% We assume the deviations in $a^*$ and $b^*$ from the standard case are sufficiently small and the transformation from RGB to $L^* a^* b^*$ is still valid.
+
+% \begin{table}
+% \caption{Comparison between the standard white in D65 and the white reference in our measurements (mean $\pm$ standard deviation).}
+% \label{tab:white-comparison}
+% \centering
+% \begin{tabular}{rccc}
+%     \toprule
+%     & $L^*$ & $a^*$ & $b^*$ \\
+%     \midrule
+%     \textbf{D65} & $100.000$ & $0.005260$ & $-0.010408$ \\
+%     \textbf{our} & $77.21 \pm 3.85$ & $0.30 \pm 0.93$ & $-3.53 \pm 2.07$ \\
+%     % \textbf{std} & $3.85248$ & $0.934964$ & $2.06641$ \\
+%     \bottomrule
+% \end{tabular}
+% \end{table}
+
+\subsection{Correction by Scaling}\label{sec:scaling}
+
+Our app is equipped with a simple, deterministic correction algorithm.
+Let $(R_\textup{m}, G_{\textup{m}}, B_\textup{m})$ be the measured RGB values of a color card.
+We assume that the measured color $(R_\textup{w}, G_{\textup{w}}, B_\textup{w})$ of the white reference is the brightest color one can measure under the ambient light.
+To recover the full RGB space $[0, 255]^3$ from the measurable color space $[0, R_\textup{w}] \times [0, G_\textup{w}] \times [0, B_\textup{w}]$, we apply a channel-wise rescaling.
+The corrected RGB values are given by
+\begin{equation*}
+    \begin{pmatrix}
+        \widehat{R} \\ 
+        \widehat{G} \\
+        \widehat{B}
+    \end{pmatrix} = \begin{pmatrix}
+        \frac{255}{R_\textup{w}} & 0 & 0 \\
+        0 & \frac{255}{G_\textup{w}} & 0 \\
+        0 & 0 & \frac{255}{B_\textup{w}}
+    \end{pmatrix}\begin{pmatrix}
+        R_\textup{m} \\
+        G_\textup{m} \\
+        B_\textup{m}
+    \end{pmatrix}.
+\end{equation*}
+This method was suggested by \citet{degreef2014} for monitoring newborn jaundice using smartphones.
+We consider it the simplest yet meaningful method for color correction using white reference.
+
+\subsection{Correction by Model}\label{sec:model}
+
+As a more complex approach to color correction, we fit a regression model on our measured data.
+To optimize the model toward reducing perceived color difference between detected and true colors, we transform the measured RGB values into the $L^* a^* b^*$ space before modeling.
+We consider a multi-target linear model defined by
+\begin{equation} \label{eq:model}
+\begin{split}
+    \begin{pmatrix}
+        \widehat{L^*} \\ 
+        \widehat{a^*} \\
+        \widehat{b^*}
+    \end{pmatrix}
+    =& \begin{pmatrix}
+        a_1 \\
+        a_2 \\
+        a_3
+    \end{pmatrix} + \begin{pmatrix}
+        B_{11} & B_{12} & B_{13} \\
+        B_{21} & B_{22} & B_{23} \\
+        B_{31} & B_{32} & B_{33}
+    \end{pmatrix} \begin{pmatrix}
+        L^*_\textup{m} \\
+        a^*_\textup{m} \\
+        b^*_\textup{m}
+    \end{pmatrix} \\
+    &+ \begin{pmatrix}
+        C_{11} & C_{12} & C_{13} \\
+        C_{21} & C_{22} & C_{23} \\
+        C_{31} & C_{32} & C_{33}
+    \end{pmatrix} \begin{pmatrix}
+        L^*_\textup{w} \\
+        a^*_\textup{w} \\
+        b^*_\textup{w}
+    \end{pmatrix} \\
+    &+ \begin{pmatrix}
+        D_{11} & D_{12} \\
+        D_{21} & D_{22} \\
+        D_{31} & D_{32}
+    \end{pmatrix} \begin{pmatrix}
+        \textup{pitch} \\
+        \textup{roll}
+    \end{pmatrix},
+\end{split}
+\end{equation}
+where $(L^*_\textup{m}, a^*_\textup{m}, b^*_\textup{m})$ and $(L^*_\textup{w}, a^*_\textup{w}, b^*_\textup{w})$ are the measured colors of a color card and the white reference, respectively, and $a_{i}, B_{ij}, C_{ij}, D_{ij}$ are parameters.
+
+The model is fitted by minimizing the empirical risk associated with the loss function
+\begin{equation*} %\label{eq:euclidean-error}
+    \ell(y, \hat{y})
+    = \left( L^* - \widehat{L^*} \right)^2 + \left( a^* - \widehat{a^*} \right)^2 + \left( b^* - \widehat{b^*} \right)^2,
+\end{equation*}
+where $y = (L^*, a^*, b^*)$ denotes the ground truth color and $\hat{y} = (\widehat{L^*}, \widehat{a^*}, \widehat{b^*})$ denotes the prediction given by the model.
+For simplicity, we refer to $\sqrt{\ell(y, \hat{y})}$, the Euclidean distance between $y$ and $\hat{y}$, as the \emph{Euclidean error} of a correction.
+% For the purpose of uncertainty quantification,
+% we construct bootstrap confidence intervals \cite{davison1997,efron1994} for the estimated coefficients.
+% 
+
+% Pitch and roll in \eqref{eq:model} provide information about the angle from which a picture was taken.
+Our assumption is that the white reference can sufficiently characterize the ambient light, so that additional information of pitch and roll contributes little to color correction.
+We validate this assumption by comparing the full model \eqref{eq:model} with a reduced model with $D = 0$.
+
+% \begin{table}
+% \caption{Targeted leave-out cross validation specification.}
+% \label{tab:cv-folds}
+% \centering
+% \begin{tabular}{ll}
+%     \toprule
+%     Test set & Colors \\
+%     \midrule
+%     Red & 7, 9, 12, 15 \\
+%     Green & 4, 6, 11, 14 \\
+%     Blue & 3, 5, 6, 8, 13, 18 \\
+%     Neutral & 19-24 \\
+%     \bottomrule
+% \end{tabular}
+% \end{table}
+
+\section{Results}\label{sec:results}
+
+\subsection{Effect of Correction}
+
+% \begin{figure}
+%     \includegraphics{../Images/plot_error_ecdf.pdf}
+%     \caption{Euclidean error ECDFs of the correction methods with $95\%$ Dvoretzky–Kiefer–Wolfowitz confidence band \cite{dvoretzky1956,wasserman2004}.}
+%     \label{fig:error-ecdf}
+% \end{figure}
+
+We partition the measurements into an 80/20 train-test split, training both the full and reduced models on the former. To evaluate the efficacy of the correction step, we apply scaling correction directly to the held-out test set, allowing for a rigorous comparison against the model-based predictions.
+\cref{fig:abstract}(d) shows the empirical cumulative distribution function (ECDF) of the measurement-wise Euclidean error in the $L^* a^* b^*$ space on the test set.
+Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
+The median error of raw measurements is $21.46$.
+After correction by scaling, the median error reduces to $9.71$;
+After correction by the full and reduced models, the median errors drop to $7.19$ and $7.17$, respectively.
+Without correction, only $2\%$ of measured colors fall below the small color difference threshold (Euclidean error $\leq 6$).
+Using correction by scaling, the small color difference rate is increased to $26\%$.
+The full and reduced models yield a small color difference rate of $31\%$ and $35\%$, respectively.
+
+The error ECDFs of the two model variants shown in \cref{fig:abstract}(d) are almost identical,
+which indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
+The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
+The observation is further supported by \cref{tab:boot}, which shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
+Both pitch and roll have non-significant effects on color correction.
+Based on these observations, we focus on the reduced model in subsequent analysis.
+
+\begin{table}
+    \caption{%
+        Pitch and roll coefficient estimates on training set with $95\%$ percentile bootstrap confidence intervals \cite{davison1997,efron1994} obtained from 1000 bootstrap trials.
+        To construct the confidence intervals, we resample training instances with replacement, which corresponds to ``resampling cases'' in \citet{davison1997} and ``bootstrapping pairs'' in \citet{efron1994}.
+    }
+    \label{tab:boot}
+    \centering
+    \setlength{\tabcolsep}{5.7pt}
+    \begin{tabular}{lrlrl}
+        \toprule
+        & \multicolumn{2}{c}{pitch} & \multicolumn{2}{c}{roll} \\
+        \midrule
+        $\widehat{L^*}$ & $-0.07$ & $[-0.11, -0.03]$ & $0.00$ & $[-0.02, 0.03]$ \\
+        $\widehat{a^*}$ & $0.02$ & $[-0.02, 0.06]$ & $-0.01$ & $[-0.04, 0.02]$ \\
+        $\widehat{b^*}$ & $0.05$ & $[-0.01, 0.11]$ & $-0.00$ & $[-0.04, 0.04]$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+While the error ECDF of the models lie above that of the scaling method,
+their confidence bands overlap.
+At the higher end of error distributions, we see an improvement of the models over simple scaling.
+The maximum error incurred by either model is lower than the scaling method.
+% In relation to the raw measurements,
+% scaling correction reduces the maximum error by $35\%$,
+% and the reduced model reduces the maximum error by $47\%$
+
+To gain some insights into how the correction methods reduce the Euclidean error, we visualize the error per channel in \cref{fig:error-kde}.
+% As the two model variants yield comparable results, we only display the reduced model.
+One can observe a shift of error distribution in the $L^*$ coordinates toward zero resulted from the correction methods.
+The error distributions in the $a^*$ and $b^*$ coordinates are all centered at approximately zero,
+but the correction methods lead to a reduction in variance.
+The error distribution of the model is more concentrated around zero than that of the scaling method.
+These observations show that the correction methods are capable of removing bias toward darker colors, but cannot eliminate uncertainty in hue.
+
+\begin{figure*}[htb]
+    % Change the legend to show what the two lines mean.
+    \includegraphics{../Images/plot_error_kde.pdf}%\\
+    \caption{Kernel density plots for channel-wise difference from ground truth.}
+    \label{fig:error-kde}
+\end{figure*}
+
+% \begin{table}
+% \caption{%
+%     Statistics of Euclidean error in raw measurements and after correction.
+%     Relative change to raw data (first row) are given in parentheses.
+% }
+% \label{tab:error-ecdf-stats}
+% \centering
+% \begin{tabular}{crrrr}
+%     \toprule
+%     Method & Mean & Median & Max \\
+%     \midrule
+%     (Raw) & 20.71 (0\%) & 21.46 (0\%) & 45.67 (0\%) \\
+%     Scaling & 11.63 (-44\%) & 9.71 (-55\%) & 20.87 (-35\%) \\
+%     Full model & 8.08 (-61\%) & 7.19 (-66\%) & 17.70 (-61\%) \\
+%     Reduced model & 8.16 (-61\%) & 7.17 (-67\%) & 17.31 (-62\%) \\
+%     \bottomrule
+% \end{tabular}
+% \end{table}
+
+% \begin{itemize}
+%     \item (Grid comparison: visual sanity check, no clear pattern cross colors. $\to$ visual abstract?)
+%     \item (HSV or rather LAB) KDE plots: slightly more quantitative, but still interpretable.
+%     \item Raw vs.\@ corrected RGB/LAB: scaling mostly corrects for brightness. The gray scale colors reflect the ambient light -- balanced light, as expected by the standard lighting condition.
+% \end{itemize}
+% KDE plots:
+% \begin{itemize}
+%     \item Both scaling and model mostly correct for brightness!
+%     \item Hue correction is minimal, possibly because of the ambient light.
+% \end{itemize}
+
+\subsection{Generalizing to Unseen Colors}
+
+Our dataset covers only 24 colors, but the models ought to generalize to arbitrary colors.
+We simulate the scenario of generalization to unseen colors by employing a cross-validation strategy.
+For each $k = 1,\dots,20$, we randomly reserve $k$ colors for validation and use the remaining $24 - k$ colors for training.
+The results are shown by \cref{fig:cv-k}.
+The average-case performance of the model, measured by the average Euclidean error, remains comparable with the scaling method even if we omit up to 15 colors from the training set.
+When leaving out up to 5 colors, the frequency of the model achieving small color difference is, on average, higher than the scaling method,
+but there is large fluctuation across choices of colors to leave out.
+
+% An inflection point in performance is observed at leaving out $k = 18$ colors, where the validation error increases drastically.
+% This behavior suggests that the model maintains its predictive accuracy even when trained on a small number of colors.
+% We therefore believe that our results generalize beyond the 24 colors we collected data from.
+
+\begin{figure}[ht]
+    \includegraphics{../Images/plot_cv_k_out_acc.pdf}%\\
+    \caption{Validation performance of the reduced model on $k$ left-out colors. The shaded bands show the upper and lower quartiles over 20 trials per $k$. The horizontal lines represent the average performance of the scaling method.}
+    \label{fig:cv-k}
+\end{figure}
+
+\begin{figure}
+    \includegraphics{../Images/plot_cv_loo.pdf}%\\
+    \caption{Validation average Euclidean error (mean $\pm$ one standard deviation across 20 measurements) of the reduced model on single left-out color. The color of each bar is the color left out.}
+    \label{fig:cv-loo}
+\end{figure}
+
+
+% In the targeted leave-out experiments (see \cref{tab:cv-folds}), we observe that the model trained on all colors but the green ones fail to generalize to the green colors,
+% while the model readily generalizes to red or blue colors even if they are left out.
+
+To identify colors with high impact on generalization, we perform leave-one-out cross validation, training the model on all but the $j$-th color for $j = 1,\dots,24$ and testing it on the single color left out.
+The results of leave-one-out cross validation (\cref{fig:cv-loo}) reveal an uneven distribution of generalization performance across colors.
+We find that color $j = 11$, which possesses the largest green ($G$) channel intensity in the dataset,
+% \todo{
+%     Explain this color indexing.
+%}
+is the primary driver of failure of generalization.
+% \todo[inline]{We might need to revise the cross validation results.}
+
+% The significant surge in MSE upon the omission of greenish samples—and Sample 11 in particular—can be attributed to the non-linearities inherent in the sensor’s Green-channel response or the spectral distribution of the target illuminant. In many Bayer-filter-based sensors, the Green channel captures the majority of the luminance information and serves as the primary anchor for the transformation matrix.
+% If the training set lacks these high-intensity Green samples, the model fails to capture the curvature of the sensor's response in that region, leading to poor extrapolation. Essentially, the Green samples represent a critical boundary condition; without them, the transformation becomes ill-conditioned for a large portion of the visible gamut.
+% \todo[inline]{Citation!}
+
+\section{Discussion \& Conclusion}\label{sec:conclusion}
+
+Our study provides empirical evidence that rescaling RGB channels according to a white reference can improve the quality of color measurements made by smartphones.
+Under usual daylight, a multi-target linear model can further avoid large deviations from the true color,
+although the median improvement over the scaling method is marginal.
+We confirmed that the pitch and roll angle of the camera have little influence on color correction using white reference,
+and identified that green-toned colors play an important role in the generalization of our models.
+% \todo[inline]{We might need to revise the cross validation results.}
+
+We acknowledge the limitations of our study and generally of color detection using smartphones.
+Firstly, raw camera measurements are affected by sensor noise and illumination variability.
+According to \citet{gueli2019}, for a better color adjustment, both black and white references should be considered.
+Black reference is obtained by taking a picture in a black box, such that to capture the camera noise;
+white reference is taken as before. 
+The black–white correction can be implemented as an affine transformation consisting of a translation that maps the black reference to the origin of the $L^* a^* b^*$ space,
+and a rotation that aligns the white reference with the $L^*$ axis.
+% In preliminary experiments, we found a meaningful way to incorporate black-white correction into our workflow.
+Secondly, given that green-toned colors appear to have high influence in the model's generalization performance, we propose normalizing the spectral components of the light according to their relative perceptual influence.
+One possible implementation would be to weight each RGB coefficient by its corresponding influence prior to the conversion to $L^* a^* b^*$.
+After the full processing pipeline, the inverse weighting could be applied to the corrected colors in order to recover values in the original color space, while preserving the corrections introduced by the normalization and enabling a meaningful comparison with the reference.
+
+
+% \begin{itemize}
+%     \item Limitations:
+%     \begin{itemize}
+%         \item Analysis focused on one lighting condition. We could not exactly reproduce D65 due to limited resources.
+%         In particular, professional colorimeter as comparison would be meaningful.
+%         \item White paper is not (255, 255, 255) -- bias toward underestimating brightness.
+%         \item Factors not considered: type of smartphone, distance to object.
+%         \item Error in color remains mostly uninterpretable.
+%         Only comparison, but no statement about whether one method is ``good enough.''
+%     \end{itemize}
+% \end{itemize}
+
+\newpage
+
+\section*{Contribution Statement}
+
+% TODO: Explain here, in one sentence per person, what each group member contributed.
+All authors participated in data collection.
+Zhi Jing assisted in exploratory analysis, implemented the models, and conducted preliminary experiments.
+Enrico Vesentini identified the objects that theoretically satisfy the properties required for the purposes of this study, and suggested improvements to the workflow.
+T\`ai Th\'ai engineered the core codebase for exploratory analysis, performed bootstrapping for robustness analysis, designed the cross validation experiments, architected and improved the models.
+Jonas Thumbs developed the app for data collection, performed exploratory analysis, and designed the graphical abstract.
+Baisu Zhou performed exploratory analysis, engineered the project infrastructure, participated in the analysis of the methods, and finalized the figures and the report.
+
+% \section*{Notes} 
+
+% Your entire report has a \textbf{hard page limit of 4 pages} excluding references and the contribution statement. (I.e. any pages beyond page 4 must only contain the contribution statement and references). Appendices are \emph{not} possible. But you can put additional material, like interactive visualizations or videos, on a githunb repo (use \href{https://github.com/pnkraemer/tueplots}{links} in your pdf to refer to them). Each report has to contain \textbf{at least three plots or visualizations}, and \textbf{cite at least two references}. More details about how to prepare the report, inclucing how to produce plots, cite correctly, and how to ideally structure your github repo, will be discussed in the lecture, where a rubric for the evaluation will also be provided.
+
+
+\bibliography{bibliography}
+\bibliographystyle{icml2025}
+
+\end{document}
+
+% This document was modified from the files available at https://icml.cc/Conferences/2025/AuthorInstructions
+% the full copyright notice is available within the file icml2025.sty

@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-from color_conversion import convert_rgb_cols
-import numpy as np
 import itertools
 from sklearn.metrics import mean_squared_error
 import math
@@ -87,6 +85,7 @@ class CorrectionByScaling:
 
         return corr_r, corr_g, corr_b
     
+    # NOT USED IN THE REPORT
     def _scale_lab_row(
             self,
             meas_l: float, meas_a: float, meas_b: float,
@@ -122,13 +121,13 @@ class CorrectionByModel:
     def __init__(
             self,
             space: ColorSpace = ColorSpace.RGB,
-            method: str = 'joint',
+            method: str = 'joint',  # the 'individual' method is not used in the report
             pose: bool = True,
             degree: int = 1,
             reg_degree: float = 0.,
             reg_pose: float = 0.,
             boundary_penalty_factor: float = 1000,
-            r: int = 4
+            r: int = 4  # only r=4 is used in the report
         ):
         # Data loading parameters
         self.space = space
@@ -137,6 +136,7 @@ class CorrectionByModel:
         self.pose = pose
         
         # Hyperparameters
+        # NOT USED IN THE REPORT
         self.degree = degree
         self.reg_degree = reg_degree
         self.reg_pose = reg_pose
@@ -156,22 +156,14 @@ class CorrectionByModel:
         self.w2 = None
         self.pitch = None
         self.roll = None
+        self.l = None
+        self.a = None
+        self.b = None
     
     def build_design_matrix(self):
         """
         Build design matrix for polynomial optimization.
-
-        joint:
-            [1,
-             degree = 1 terms,
-             degree = 2 terms,
-             ...
-             degree = D terms]
-            where terms are m0^i * m1^j * m2^k with i+j+k = d
-
-        individual:
-            For each channel:
-            [1, m, m^2, ..., m^degree]
+        (In the report we only used a linear model.)
 
         If pose == True:
             Append pitch and roll at the end.
@@ -179,9 +171,9 @@ class CorrectionByModel:
         m0 = self.m0
         m1 = self.m1
         m2 = self.m2
-        w0 = self.w0
-        w1 = self.w1
-        w2 = self.w2
+        w0 = self.l
+        w1 = self.a
+        w2 = self.b
         N = len(m0)
 
         # pose terms
@@ -255,7 +247,7 @@ class CorrectionByModel:
             mse0 = mean_squared_error(self.gt0, c0)
             mse1 = mean_squared_error(self.gt1, c1)
             mse2 = mean_squared_error(self.gt2, c2)
-            mse_loss = (mse0 + mse1 + mse2) / 3
+            mse_loss = (mse0 + mse1 + mse2) #/ 3
             # Boundary penalty for all 3 channels
             if self.space == ColorSpace.RGB:
                 boundary_penalty = (
@@ -303,7 +295,6 @@ class CorrectionByModel:
                 boundary_penalty = (np.mean((c < -128) | (c > 127))) * self.boundary_penalty_factor
             # Compute regularization penalty
             reg_penalty = 0
-            Xc = X[channel]
             idx = 1  # skip constant term
             # Compute regularization for degree terms
             for d in range(1, self.degree + 1):
@@ -334,12 +325,16 @@ class CorrectionByModel:
         if self.space == ColorSpace.LAB:
             convert_rgb_cols(df, prefix='gt__', to=ColorSpace.LAB)
             convert_rgb_cols(df, prefix=f'color_r{self.r}_', to=ColorSpace.LAB)
+            convert_rgb_cols(df, prefix=f'white_r{self.r}_', to=ColorSpace.LAB)
             self.m0 = df[f'color_r{self.r}_l'].values
             self.m1 = df[f'color_r{self.r}_a'].values
             self.m2 = df[f'color_r{self.r}_b'].values
             self.gt0 = df['gt__l'].values
             self.gt1 = df['gt__a'].values
             self.gt2 = df['gt__b'].values
+            self.l = df[f'white_r{self.r}_l'].values
+            self.a = df[f'white_r{self.r}_a'].values
+            self.b = df[f'white_r{self.r}_b'].values
         else:
             self.m0 = df[f'color_r{self.r}_R'].values
             self.m1 = df[f'color_r{self.r}_G'].values
@@ -347,9 +342,7 @@ class CorrectionByModel:
             self.gt0 = df['gt__R'].values
             self.gt1 = df['gt__G'].values
             self.gt2 = df['gt__B'].values
-        self.w0 = df[f'white_r{self.r}_R'].values
-        self.w1 = df[f'white_r{self.r}_G'].values
-        self.w2 = df[f'white_r{self.r}_B'].values
+
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         
@@ -362,9 +355,7 @@ class CorrectionByModel:
             )
             optimal_joint_coeffs = minimize(
                 loss_function,
-                x0=x0,
-                method='L-BFGS-B',
-                options={'maxiter': 1000, 'ftol': 1e-8}
+                x0=x0
             )
             self.coeffs = optimal_joint_coeffs.x.reshape(-1, 3)
         elif self.method == 'individual':
@@ -381,9 +372,7 @@ class CorrectionByModel:
                 )
                 optimal_individual_coeffs = minimize(
                     loss_function,
-                    x0=x0,
-                    method='L-BFGS-B',
-                    options={'maxiter': 1000, 'ftol': 1e-8}
+                    x0=x0
                 )
                 self.coeffs[channel] = optimal_individual_coeffs.x
         if verbose:
@@ -424,6 +413,10 @@ class CorrectionByModel:
         self.w0 = df[f'white_r{self.r}_R'].values
         self.w1 = df[f'white_r{self.r}_G'].values
         self.w2 = df[f'white_r{self.r}_B'].values
+        convert_rgb_cols(df, prefix=f'white_r{self.r}_', to=ColorSpace.LAB)
+        self.l = df[f'white_r{self.r}_l'].values
+        self.a = df[f'white_r{self.r}_a'].values
+        self.b = df[f'white_r{self.r}_b'].values
         self.pitch = df['pitch'].values
         self.roll = df['roll'].values
         # Compute unclipped corrected values
@@ -446,7 +439,7 @@ class CorrectionByModel:
             df[f'{prefix}_r{self.r}_b'] = np.clip(c2, -128.0, 127.0)
         return df
 
-    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05, stratified: bool = False) -> np.ndarray:
+    def train_with_bootstrap(self, df: pd.DataFrame, n_iterations: int = 50, alpha: float = 0.05) -> np.ndarray:
         """
         Train the correction model with (stratified) bootstrap.
         Store the bootstrap standard error estimates and percentile confidence intervals.
@@ -459,7 +452,6 @@ class CorrectionByModel:
             Number of bootstrap samples.
         alpha: float
             Significance level.
-        stratified: bool
 
         Returns: np.ndarray
             Trained coefficients (mean of bootstrapped coefficients).
@@ -468,23 +460,15 @@ class CorrectionByModel:
         
         print(f"Starting Bootstrap Training ({n_iterations} iterations)...")
         for i in tqdm(range(n_iterations)):
-            if stratified:
-                # [df.columns] is to avoid a warning, see https://stackoverflow.com/questions/44114463/stratified-sampling-in-pandas#comment138728728_44115314
-                df_resampled = df.groupby(
-                    'sample_number', group_keys=False  # 'sample_number' == color ID
-                )[df.columns].apply(
-                    lambda x: x.sample(frac=1.0, replace=True, random_state=i)
-                ).reset_index(drop=True)
-            else:
-                df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
+            df_resampled = df.sample(frac=1.0, replace=True, random_state=i)
 
             current_coeffs = self.train(df_resampled)
-            
+
             if self.method == 'joint':
                 self.bootstrapped_coeffs.append(current_coeffs.copy())
             else:
                 self.bootstrapped_coeffs.append([c.copy() for c in current_coeffs])
-                
+
         # Calculate bounds based on user-defined alpha
         lower_p = (alpha / 2) * 100
         upper_p = (1 - alpha / 2) * 100

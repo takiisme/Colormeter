@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from constants import ColorSpace
 
-# TODO: Allow for conversion from any source (rgb, hsv, lab) to any target (rgb, hsv, lab).
+
 def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace = ColorSpace.HSV):
     """
     Convert RGB columns in a DataFrame to HSV or Lab color space.
@@ -46,6 +46,7 @@ def convert_rgb_cols(df: pd.DataFrame, prefix: str ="color_r4_", to: ColorSpace 
         raise ValueError("Unsupported color space. Use 'hsv' or 'lab'.")
 
     return df
+
 
 def convert_to_rgb(df, prefix="color_r4_", from_space=ColorSpace.HSV):
     """
@@ -88,4 +89,3 @@ def convert_to_rgb(df, prefix="color_r4_", from_space=ColorSpace.HSV):
     df[f"{prefix}B"] = rgb[:, 2]
 
     return df
-
