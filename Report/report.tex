@@ -149,19 +149,19 @@ In this study, we want to find a sufficiently accurate approach to correct for a
 While smartphone cameras store colors in RGB format, the RGB color space is not suitable for our analysis,
 because the distance between two points in the RGB space does not align with the perceived difference between two colors.
 In our analysis, we use the CIELAB (or $L^* a^* b^*$) color space, designed by Commission Internationale de l’Éclairage (CIE)\footnote{
-    In Enligh: International Commission on Illumination.
+    In English: International Commission on Illumination.
     Website: \url{https://cie.co.at/}.
 } for colorimetric applications.
 Every color in the RGB space can be mapped non-linearly to a point $(L^*, a^*, b^*)$ in the $L^* a^* b^*$ space,
 where the $L^*$ coordinate represents lightness and the $a^*, b^*$ coordinates control the hue.
 The Euclidean distance on the $L^* a^* b^*$ space reflects the perceived difference between colors.
 
-To evaluate the performance of the correction methods, we define an accuracy threshold.
-% The first corresponds to the human chromatic sensitivity threshold, while the second represents a small but perceptible color difference.
-% \todo{Delete this sentence!}
-The smallest wavelength difference that can be perceived as a chromatic difference under constant luminance conditions (``just noticeable difference'') is approximately $1$~nm, which corresponds to about an Euclidean distance of approximately $1.27$ in the $L^* a^* b^*$ color space \citep{oleari2015}.
+To evaluate the performance of the correction methods, we define an accuracy threshold as follows.
+The smallest wavelength difference that can be perceived as a chromatic difference under constant luminance conditions is approximately $1$~nm, which corresponds to about a Euclidean distance of approximately $1.27$ in the $L^* a^* b^*$ color space \citep{oleari2015}.
+% This distance is called ``just noticeable difference''
+This distance is defined as $1$~jnd (``just noticeable difference'').
 The authors further mentioned that a few multiples of the just noticeable difference can still be considered small.
-Accordingly, we define the Euclidean error $6$ (approximately five times the just noticeable difference) as the \emph{small color difference threshold} in our study.
+Accordingly, we define the Euclidean error of $6$, approximately $5$~jnd, as the \emph{small color difference threshold} in our study.
 % \todo{Check whether these arbitrary values make sense.}
 
 % The model implemented so far achieves color corrections with an error below the first threshold in \texttt{INSERT}\% of cases on average, and below the second threshold in \texttt{INSERT}\% of cases on average.\todo{text}
@@ -169,14 +169,16 @@ Accordingly, we define the Euclidean error $6$ (approximately five times the jus
 % This error threshold is used to calibrate colorimeters.
 % As we cannot assume a smartphone app to achieve such high accuracy, we consider an Euclidean distance of $6$\todo{Or 5? Or 10?} as small color difference.
 
-We have developed our own color measurement app with built-in correction using white reference.
+We have developed our own color measurement app\footnote{
+    The source code of the app is available at \url{https://github.com/Jonas-Thumbs/colorimeter}.
+} with built-in correction using white reference.
 As the transformation from RGB to $L^* a^* b^*$ is intended for measurements under CIE's D65 lighting condition \citep{oleari2015},
 we collected data using our app under a lighting condition similar to D65 (\cref{sec:data}).
-We further compared the app's correction-by-scaling method (\cref{sec:scaling})\todo{
-    Mention that our app can do this, but we do not do this in data collection?
-} with a modeling approach (\cref{sec:model}).
+We further compared the app's correction-by-scaling method (\cref{sec:scaling}) with a modeling approach (\cref{sec:model}).
 While the model provides insights into the color correction mechanism,
-the scaling method proves to be more robust (\cref{sec:results}).
+the scaling method proves to be more robust (\cref{sec:results}).\footnote{
+    The code for our analysis is available at \url{https://github.com/takiisme/Colormeter}.
+}
 
 \begin{figure*}
     \includegraphics{../Images/graphical_abstract4.pdf}\\
@@ -418,7 +420,7 @@ To gain some insights into how the correction methods reduce the Euclidean error
 % As the two model variants yield comparable results, we only display the reduced model.
 One can observe a shift of error distribution in the $L^*$ coordinates toward zero resulted from the correction methods.
 The error distributions in the $a^*$ and $b^*$ coordinates are all centered at approximately zero,
-but the correction methods leads to a reduction in variance.
+but the correction methods lead to a reduction in variance.
 The error distribution of the model is more concentrated around zero than that of the scaling method.
 These observations show that the correction methods are capable of removing bias toward darker colors, but cannot eliminate uncertainty in hue.
 
