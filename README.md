@@ -1,7 +1,7 @@
 # Code for Data Literacy Project
 
 Title: _Robustness and Generalization in Smartphone-Based Colorimetry: A
-Comparative Analysis of Deterministic and Stochastic Correction Paradigms_
+Comparative Analysis of Deterministic and Data-Driven Correction Methods_
 
 ## Folder structure
 
