@@ -8,9 +8,9 @@ from constants import COLOR
 nrows, ncols = 1, 3
 plt.rcParams.update(icml2024(column='full', nrows=nrows, ncols=ncols))
 # print(icml2024(column='full', nrows=nrows, ncols=ncols))
+# Use custom figure size for visual abstract
 figsize = (1.8503937, 1.2992126)
 plt.rcParams.update({'figure.figsize': figsize})
-# exit()
 
 df_test = pd.read_csv("Data/test_corrected_new.csv")
 
@@ -146,5 +146,4 @@ stats = {
     },
 }
 stats = pd.DataFrame(stats).T
-
-stats.round(2).to_csv("error_ecdf_stats.csv")
+stats.round(2).to_csv("Data/error_ecdf_stats.csv")

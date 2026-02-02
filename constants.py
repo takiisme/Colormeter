@@ -31,7 +31,7 @@ COLOR = {
     'full': rgb.tue_gold,
 }
 
-
+# Ground truth colors
 GT = [
     {'sample_number': 1,  'label': 'Dark Skin',      'gt__R': 115, 'gt__G': 82,  'gt__B': 69},
     {'sample_number': 2,  'label': 'Light Skin',     'gt__R': 204, 'gt__G': 161, 'gt__B': 141},

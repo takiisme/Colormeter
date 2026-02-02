@@ -1,4 +1,0 @@
-- TransformationToDaylight
-  - methods:
-    - train
-    - test

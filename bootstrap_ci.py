@@ -6,9 +6,9 @@ from constants import ColorSpace, LightingCondition
 from util import load_data
 
 # Load data
-df_daylight1 = load_data("Data/Jonas1.json")
+df_daylight1 = load_data("Data/daylight1.json")
 df_daylight1["lighting_condition"] = LightingCondition.DAYLIGHT.value
-df_daylight2 = load_data("Data/Baisu1.json")
+df_daylight2 = load_data("Data/daylight2.json")
 df_daylight2["lighting_condition"] = LightingCondition.DAYLIGHT.value
 df_raw = pd.concat([df_daylight1, df_daylight2], ignore_index=True)
 for prefix in ["color_r4_", "gt__"]:
@@ -22,7 +22,7 @@ corrector_model_full = CorrectionByModel(space=ColorSpace.LAB, boundary_penalty_
 corrector_model_full.train(df_train.copy())
 df_test = corrector_model_full.apply_correction(df_test.copy(), prefix='full')
 
-boot_data = np.load('boot_coeffs_pose=True.npy', allow_pickle=True)
+boot_data = np.load('Data/boot_coeffs_pose=True.npy', allow_pickle=True)
 
 coefs = corrector_model_full.coeffs
 ci_low = np.percentile(boot_data, 2.5, axis=0)
@@ -63,4 +63,5 @@ table.columns = [
 table.index = [
     r'$\widehat{L^*}$', r'$\widehat{a^*}$', r'$\widehat{b^*}$'
 ]
-table.to_latex('boot_table.tex', escape=False)
+# In the end we decided to format the table manually.
+# table.to_latex('Report/boot_table.tex', escape=False)

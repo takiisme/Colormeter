@@ -143,13 +143,9 @@ ax2.set_yticks(
     color=rgb.tue_violet
 )
 ax2.set_ylim(0, 40)
-# xticks = np.arange(0, 45, 5)
-# ax2.set_yticks(ticks=xticks, labels=xticks, color=rgb.tue_violet)
-
-# ax.set_xticks(np.arange(2, 22, 2))
 ax.set_xlabel(r'$k$')
-ax.legend(loc='upper center')
-ax2.legend(loc='lower center')
+# ax.legend(loc='upper center')
+# ax2.legend(loc='lower center')
 
 plt.savefig('Images/plot_cv_k_out_acc.pdf')
 
@@ -157,7 +153,7 @@ plt.savefig('Images/plot_cv_k_out_acc.pdf')
 # LOO CV
 fig, ax = plt.subplots(1, 1)
 
-stats_loo = pd.read_csv('New results/loo_detailed_points.csv', index_col=0).groupby(['left_out_color']).agg(
+stats_loo = pd.read_csv('Data/loo_detailed_points.csv', index_col=0).groupby(['left_out_color']).agg(
     avg_error = ('delta_E', 'mean'),
     avg_error_std = ('delta_E', 'std'),
     below6_rate = ('delta_E', lambda x: np.mean(x < 6.0))
@@ -172,7 +168,7 @@ stats_loo = pd.read_csv('New results/loo_detailed_points.csv', index_col=0).grou
         df['gt__R'], df['gt__G'], df['gt__B']
     ))
 )
-stats_loo.to_csv('stats_loo.csv', index=False)
+stats_loo.to_csv('Data/stats_loo.csv', index=False)
 
 ax.bar(
     stats_loo['left_out_color'],

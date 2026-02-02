@@ -5,9 +5,9 @@ from constants import ColorSpace
 from correction import CorrectionByModel
 from util import load_data
 
-df_daylight1 = load_data("Data/Jonas1.json")
+df_daylight1 = load_data("Data/daylight1.json")
 df_daylight1["lighting_condition"] = "daylight"
-df_daylight2 = load_data("Data/Baisu1.json")
+df_daylight2 = load_data("Data/daylight2.json")
 df_daylight2["lighting_condition"] = "daylight"
 df = pd.concat([df_daylight1, df_daylight2], ignore_index=True)
 df_raw = df.copy()

@@ -20,8 +20,6 @@ LABEL = {
     'reduced': 'Reduced model',
 }
 
-# =============================================
-# Option 1: horizontal KDE plots
 
 fig, axs = plt.subplots(nrows=nrows, ncols=ncols)
 for i, channel in enumerate(['l', 'a', 'b']):

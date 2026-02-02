@@ -1,221 +1,14 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt 
-import seaborn as sns
 import random
 from sklearn.metrics import mean_squared_error
-from typing import Dict, List, Any, Optional
-from correction import CorrectionByModel, CorrectionByScaling
-from color_conversion import convert_rgb_cols, convert_to_rgb
+from correction import CorrectionByModel
+from color_conversion import convert_rgb_cols
 from constants import ColorSpace, LightingCondition
 from plot import plot_k_out_results, plot_targeted_results, plot_leave_one_out_results
 from util import load_data
 from tqdm import tqdm
 
-# TODO: Consider tracking probability of low Delta E error instead of MSE
-
-# def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
-#     """
-#     Perform k-color-out cross-validation as specified.
-    
-#     For each k from k_min to k_max, run iterations_per_k iterations.
-#     For each iteration, leave k random samples out for testing.
-    
-#     Parameters
-#     ----------
-#     model_class : class
-#         The model class (CorrectionByModel)
-#     df_train : pd.DataFrame
-#         Training dataframe with measurements
-#     k_min : int
-#         Minimum k value (default: 1)
-#     k_max : int
-#         Maximum k value (default: 20)
-#     iterations_per_k : int
-#         Number of iterations to run for each k value
-#     **model_kwargs : dict
-#         Keyword arguments for initializing the model
-        
-#     Returns
-#     -------
-#     dict : Dictionary with CV results by k value
-#     """
-#     unique_sample_numbers = df_train['sample_number'].unique()
-#     print(f"Unique sample numbers: {unique_sample_numbers}")
-#     print(f"Number of unique sample numbers: {len(unique_sample_numbers)}")
-    
-#     all_sample_numbers = unique_sample_numbers.tolist()
-#     total_samples = len(all_sample_numbers)
-    
-#     # Check k_max doesn't exceed available samples
-#     if k_max > total_samples:
-#         print(f"Warning: k_max ({k_max}) exceeds total samples ({total_samples}). Reducing k_max to {total_samples}.")
-#         k_max = total_samples
-    
-#     # Initialize results storage
-#     results_by_k = []
-    
-#     for k in range(k_min, k_max + 1):
-#         print(f"\n{'='*60}")
-#         print(f"Running k-Color-Out Cross-Validation for k = {k}")
-#         print(f"{'='*60}")
-        
-#         iteration_mses = []
-#         iteration_results = []
-        
-#         for iteration in range(iterations_per_k):
-#             print(f"\n  Iteration {iteration + 1}/{iterations_per_k}")
-            
-#             # a. Randomly select k unique sample numbers for testing (without replacement)
-#             test_samples = random.sample(all_sample_numbers, k)
-#             print(f"  Test samples: {sorted(test_samples)}")
-            
-#             # b. Remaining samples for training
-#             train_samples = [s for s in all_sample_numbers if s not in test_samples]
-            
-#             # c. Create train and test dataframes
-#             cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
-#             cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
-            
-#             # Check if we have enough training data
-#             if len(cv_df_train) < 10:
-#                 print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
-#                 continue
-            
-#             # Initialize and train model
-#             model = model_class(**model_kwargs)
-#             model.train(cv_df_train)
-            
-#             # Apply correction to test set
-#             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
-            
-#             # Calculate MSE based on color space
-#             mse = calculate_mse_for_model(model, cv_df_test_corrected)
-            
-#             print(f"  Average MSE: {mse:.4f}")
-            
-#             iteration_mses.append(mse)
-#             iteration_results.append({
-#                 'iteration': iteration + 1,
-#                 'test_samples': test_samples,
-#                 'mse': mse,
-#                 'n_train': len(cv_df_train),
-#                 'n_test': len(cv_df_test)
-#             })
-
-#             results_by_k.append({
-#                 'k': k,
-#                 'iteration': iteration + 1,
-#                 'mses': mse
-#             })
-        
-#         # # Store results for this k value
-#         # if iteration_mses:
-#         #     results_by_k[k] = {
-#         #         'mses': iteration_mses,
-#         #         'mean_mse': ,
-#         #         'std_mse': np.std(iteration_mses),
-#         #         'median_mse': np.median(iteration_mses),
-#         #         'min_mse': np.min(iteration_mses),
-#         #         'max_mse': np.max(iteration_mses),
-#         #         'iterations_completed': len(iteration_mses),
-#         #         'iteration_details': iteration_results
-#         #     }
-            
-#         #     print(f"\n  Summary for k={k}:")
-#         #     print(f"    Mean MSE: {results_by_k[k]['mean_mse']:.4f}")
-#         #     print(f"    Std MSE: {results_by_k[k]['std_mse']:.4f}")
-#         #     print(f"    Min MSE: {results_by_k[k]['min_mse']:.4f}")
-#         #     print(f"    Max MSE: {results_by_k[k]['max_mse']:.4f}")
-#         #     print(f"    Iterations completed: {results_by_k[k]['iterations_completed']}/{iterations_per_k}")
-#         # else:
-#         #     results_by_k[k] = None
-#         #     print(f"\n  No valid iterations completed for k={k}")
-    
-#     # Plot overall results
-#     plot_k_out_results(results_by_k)
-#     pd.DataFrame(results_by_k).to_csv('cv_k_out.csv')
-    
-#     # # Print final summary
-#     # print_k_out_summary(results_by_k)
-    
-#     return results_by_k
-
-# def cross_validate_model_k_out_fix(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
-#     unique_sample_numbers = df_train['sample_number'].unique()
-#     all_sample_numbers = unique_sample_numbers.tolist()
-#     total_samples = len(all_sample_numbers)
-    
-#     # Check k_max doesn't exceed available samples
-#     if k_max > total_samples: 
-#         k_max = total_samples
-    
-#     # Initialize results storage
-#     rgb_cols = ['color_r4_R', 'color_r4_G', 'color_r4_B']
-#     lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
-#     lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
-
-#     result_by_k = []
-#     detailed_logs = []
-
-#     total_iterations = (k_max - k_min + 1) * iterations_per_k
-#     pbar = tqdm(total=total_iterations, desc="K-Color-Out CV Progress")
-    
-#     for k in range(k_min, k_max + 1):
-#         pbar.set_description(f"CV (k={k})")
-#         for iteration in range(iterations_per_k):    
-#             pbar.update(1)        
-#             # a. Randomly select k unique sample numbers for testing (without replacement)
-#             test_samples = random.sample(all_sample_numbers, k)
-            
-#             # b. Remaining samples for training
-#             train_samples = [s for s in all_sample_numbers if s not in test_samples]
-            
-#             # c. Create train and test dataframes
-#             cv_df_train = df_train[df_train['sample_number'].isin(train_samples)].copy()
-#             cv_df_test = df_train[df_train['sample_number'].isin(test_samples)].copy()
-            
-#             # Check if we have enough training data
-#             if len(cv_df_train) < 5:
-#                 print(f"  Warning: Training set too small ({len(cv_df_train)} rows). Skipping iteration.")
-#                 continue
-            
-#             # Initialize and train model
-#             model = model_class(**model_kwargs)
-#             model.train(cv_df_train)
-            
-#             # Apply correction to test set
-#             cv_df_test_corrected = model.apply_correction(cv_df_test.copy())
-#             #print(cv_df_test_corrected.columns)
-            
-#             # Calculate Euclidean distance (delta E) in LAB space
-#             diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
-#             distances = np.linalg.norm(diffs, axis=1)
-#             accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
-            
-#             for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
-#                 detailed_logs.append({
-#                     'k': k,
-#                     'iteration': iteration + 1,
-#                     'sample_id': row['sample_number'],
-#                     'R_measured': row['color_r2_R'],
-#                     'G_measured': row['color_r2_G'],
-#                     'B_measured': row['color_r2_B'],
-#                     'L_corrected': row['correction_r4_l'],
-#                     'a_corrected': row['correction_r4_a'],
-#                     'b_corrected': row['correction_r4_b'],
-#                     'L_ground_truth': row['gt__l'],
-#                     'a_ground_truth': row['gt__a'],
-#                     'b_ground_truth': row['gt__b'],
-#                     'delta_E': distances[i],
-#                     'is_accurate': distances[i] < 2.0
-#                 })
-#             result_by_k.append({'k': k, 'iteration': iteration + 1, 'accuracy': accuracy})
-
-#     pbar.close()
-#     pd.DataFrame(detailed_logs).to_csv('cv_k_out_detailed.csv', index=False)
-    
-#     return result_by_k
 
 def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterations_per_k=5, **model_kwargs):
     unique_sample_numbers = df_train['sample_number'].unique()
@@ -277,9 +70,9 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
                     'k': k,
                     'iteration': iteration + 1,
                     'sample_id': row['sample_number'],
-                    'R_measured': row['color_r2_R'], 
-                    'G_measured': row['color_r2_G'],
-                    'B_measured': row['color_r2_B'],
+                    'R_measured': row['color_r4_R'], 
+                    'G_measured': row['color_r4_G'],
+                    'B_measured': row['color_r4_B'],
                     'L_corrected': row['correction_r4_l'],
                     'a_corrected': row['correction_r4_a'],
                     'b_corrected': row['correction_r4_b'],
@@ -296,7 +89,7 @@ def cross_validate_model_k_out(model_class, df_train, k_min=1, k_max=20, iterati
     
     # Save detailed logs
     df_detailed = pd.DataFrame(detailed_logs)
-    df_detailed.to_csv('cv_k_out_detailed.csv', index=False)
+    df_detailed.to_csv('Data/cv_k_out_detailed.csv', index=False)
     
     # --- TRANSFORM TO PLOTTER DICTIONARY FORMAT ---
     # This rebuilds the dictionary your plotting function requires
@@ -546,23 +339,6 @@ def run_comprehensive_cross_validation(df_train):
         r=4
     )
     
-    # k_out_results = cross_validate_model_k_out_fix(
-    #     model_class=CorrectionByModel,
-    #     df_train=df_train,
-    #     k_min=1,
-    #     k_max=20,
-    #     iterations_per_k=20,
-    #     space=ColorSpace.LAB,
-    #     method='joint',
-    #     degree=1,
-    #     pose=True,
-    #     reg_degree=0.0,
-    #     reg_pose=0.0,
-    #     boundary_penalty_factor=0.0001,
-    #     r=4
-    # )
-    
-    # 2. Targeted Cross-Validation with default color categories
     # 2. Targeted Cross-Validation with default color categories
     print("\n\n2. TARGETED CROSS-VALIDATION")
     print("-"*50)
@@ -591,40 +367,10 @@ def run_comprehensive_cross_validation(df_train):
         boundary_penalty_factor=0.0001,
         r=4
     )
-    
-    # 3. Optional: Extreme RGB targeted validation
-    # print("\n\n3. EXTREME RGB TARGETED VALIDATION")
-    # print("-"*50)
-    
-    # # Find extreme RGB samples
-    # max_r_samples = df_train.groupby('sample_number')['gt__R'].max().nlargest(5).index.tolist()
-    # max_g_samples = df_train.groupby('sample_number')['gt__G'].max().nlargest(5).index.tolist()
-    # max_b_samples = df_train.groupby('sample_number')['gt__B'].max().nlargest(5).index.tolist()
-    
-    # extreme_test_sets = {
-    #     'Top_5_R': max_r_samples,
-    #     'Top_5_G': max_g_samples,
-    #     'Top_5_B': max_b_samples
-    # }
-    
-    # extreme_results = targeted_cross_validation(
-    #     model_class=CorrectionByModel,
-    #     df_train=df_train,
-    #     test_sets_dict=extreme_test_sets,
-    #     space=ColorSpace.LAB,
-    #     method='joint',
-    #     degree=1,
-    #     pose=True,
-    #     reg_degree=0.0,
-    #     reg_pose=0.0,
-    #     boundary_penalty_factor=0.0001,
-    #     r=4
-    # )
-    
+
     return {
         'k_out_results': k_out_results,
-        'targeted_results': targeted_results,
-        #'extreme_results': extreme_results
+        'targeted_results': targeted_results
     }
 
 def leave_one_color_out_analysis(df_train, model_class, **model_kwargs):
@@ -749,7 +495,7 @@ def leave_one_color_out_analysis_fix(df_train, model_class, **model_kwargs):
     print(f"Colors: {all_sample_numbers}")
     print()
     
-    rgb_measured = ['color_r4_R', 'color_r4_G', 'color_r4_B']
+    # rgb_measured = ['color_r4_R', 'color_r4_G', 'color_r4_B']
     lab_ground_truth_cols = ['gt__l', 'gt__a', 'gt__b']
     lab_corrected = ['correction_r4_l', 'correction_r4_a', 'correction_r4_b']
 
@@ -776,15 +522,7 @@ def leave_one_color_out_analysis_fix(df_train, model_class, **model_kwargs):
         # Calculate Euclidean distance (delta E) in LAB space
         diffs = cv_df_test_corrected[lab_corrected].values - cv_df_test_corrected[lab_ground_truth_cols].values
         distances = np.linalg.norm(diffs, axis=1)
-        accuracy = np.mean(distances < 2.0)  # Percentage of samples with delta E < 2
-        avg_dist = np.mean(distances)
 
-        # # Calculate MSE
-        # avg_mse = calculate_mse_for_model(model, cv_df_test_corrected)
-        
-        # Get some statistics about this color
-        #color_stats = df_train[df_train['sample_number'] == left_out_color].iloc[0]
-        
         for i, (_, row) in enumerate(cv_df_test_corrected.iterrows()):
             detailed_point_logs.append({
                 'left_out_color': left_out_color,
@@ -801,36 +539,8 @@ def leave_one_color_out_analysis_fix(df_train, model_class, **model_kwargs):
                 'delta_E': distances[i],
                 'is_accurate': distances[i] < 2.0
             })
-    pd.DataFrame(detailed_point_logs).to_csv('loo_detailed_points.csv', index=False)        
-    
-    # Create results dataframe
-    # results_df = pd.DataFrame()
-    
-    # # Sort by MSE (highest to lowest)
-    # results_df = results_df.sort_values('mse', ascending=False).reset_index(drop=True)
-    
-    # # Add rank
-    # results_df['rank'] = range(1, len(results_df) + 1)
-    
-    # print("\n" + "="*80)
-    # print("ANALYSIS RESULTS (Sorted by MSE, highest first)")
-    # print("="*80)
-    # print(f"{'Rank':<5} {'Color':<8} {'MSE':<12} {'GT RGB':<20} {'Measured RGB':<20}")
-    # print("-"*80)
-    
-    # for _, row in results_df.iterrows():
-    #     gt_rgb = f"({row['gt_R_mean']:.0f},{row['gt_G_mean']:.0f},{row['gt_B_mean']:.0f})"
-    #     meas_rgb = f"({row['color_r4_R_mean']:.0f},{row['color_r4_G_mean']:.0f},{row['color_r4_B_mean']:.0f})"
-    #     print(f"{row['rank']:<5} {row['left_out_color']:<8} {row['mse']:<12.4f} {gt_rgb:<20} {meas_rgb:<20}")
-    
-    # # Plot the results
-    # # plot_leave_one_out_results(results_df)
-    # pd.DataFrame.from_dict(results_df).to_csv('loo_cv.csv', index=False)
-    
-    # return results_df
+    pd.DataFrame(detailed_point_logs).to_csv('Data/loo_detailed_points.csv', index=False)
 
-
-# Add this function to your existing code and call it like this:
 
 def run_leave_one_out_analysis(df_train):
     """Run leave-one-color-out analysis."""
@@ -867,7 +577,6 @@ def run_leave_one_out_analysis(df_train):
     return results
 
 
-# Or if you want to compare different models:
 def compare_models_leave_one_out(df_train):
     """Compare different models using leave-one-out analysis."""
     
@@ -937,7 +646,7 @@ def compare_models_leave_one_out(df_train):
     
     return all_results
 
-
+# TODO: Check whether we need this.
 if __name__ == "__main__":
     import pickle
     random.seed(0)
