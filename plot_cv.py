@@ -32,7 +32,7 @@ plt.rcParams.update(icml2024(column='half', nrows=nrows, ncols=ncols))
 #     avg_error_std = ('avg_error', 'std')
 # ).reset_index()
 
-cv_stats = pd.read_csv('New results/cv_k_out_detailed.csv', index_col=0).assign(
+cv_stats = pd.read_csv('Data/cv_k_out_detailed.csv', index_col=0).assign(
     below6 = lambda x: x['delta_E'] < 6.0
 ).groupby(['k', 'iteration']).agg(
     below6_rate = ('below6', 'mean'),
@@ -49,7 +49,7 @@ cv_stats = pd.read_csv('New results/cv_k_out_detailed.csv', index_col=0).assign(
 # print(cv_stats.sort_values(by=['below5_rate'], ascending=False))
 # exit()
 
-df_test = pd.read_csv('Data/test_corrected.csv').assign(
+df_test = pd.read_csv('Data/test_corrected_new.csv').assign(
     scaling_delta_E = lambda df: np.sqrt(
         (df['scaling_r4_l'] - df['gt__l']) ** 2 +
         (df['scaling_r4_a'] - df['gt__a']) ** 2 +
