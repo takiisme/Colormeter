@@ -371,17 +371,17 @@ We partition the measurements into an 80/20 train-test split, training both the 
 Although the corrected colors remain visually different from the ground truths, they reduce the gap by a large margin in comparison to raw measurements.
 The median error of raw measurements is $21.46$.
 After correction by scaling, the median error reduces to $9.71$;
-After correction by the full and reduced models, the median errors drop to $7.19$ and $7.17$, respectively.
+After correction by the full and reduced models, the median errors drop to $7.22$ and $7.17$, respectively.
 Without correction, only $2\%$ of measured colors fall below the small color difference threshold (Euclidean error $\leq 6$).
-Using correction by scaling, the small color difference rate is increased to $26\%$.
-The full and reduced models yield a small color difference rate of $31\%$ and $35\%$, respectively.
+Using correction by scaling, the small color difference rate is increased to $24\%$.
+The full and reduced models yield a small color difference rate of $38\%$ and $36\%$, respectively.
 
 The error ECDFs of the two model variants shown in \cref{fig:abstract}(d) are almost identical,
 which indicates that adding information about pitch and roll does not change the behavior of the model, as we expected.
-The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
-The observation is further supported by \cref{tab:boot}, which shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
+% The statistics reported in the previous paragraph also show no improvement of the full model over the reduced one.
+The observation is also supported by \cref{tab:boot}, which shows the pitch and roll coefficient estimates of the full model fitted on the training set along with their $95\%$ bootstrap confidence intervals.
 Both pitch and roll have non-significant effects on color correction.
-Based on these observations, we focus on the reduced model in subsequent analysis.
+Based on these results, we focus on the reduced model in subsequent analysis.
 
 \begin{table}
     \caption{%
